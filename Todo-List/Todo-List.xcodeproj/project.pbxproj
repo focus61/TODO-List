@@ -16,7 +16,13 @@
 		9D7E05D228951B7A0049C9E1 /* CustomFont.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D7E05D128951B7A0049C9E1 /* CustomFont.swift */; };
 		9D7E05D428951E500049C9E1 /* CustomColor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D7E05D328951E500049C9E1 /* CustomColor.swift */; };
 		9D7E05D62895322A0049C9E1 /* DisplayMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D7E05D52895322A0049C9E1 /* DisplayMode.swift */; };
-		9D7E05D8289563860049C9E1 /* CustomTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D7E05D7289563860049C9E1 /* CustomTextView.swift */; };
+		9DBF513F28968CA20070DC66 /* DeadlineDateTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DBF513E28968CA20070DC66 /* DeadlineDateTableViewCell.swift */; };
+		9DBF514128968CCB0070DC66 /* ImportantTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DBF514028968CCB0070DC66 /* ImportantTableViewCell.swift */; };
+		9DBF51452896ABB10070DC66 /* CustomTableView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DBF51442896ABB10070DC66 /* CustomTableView.swift */; };
+		9DBF51472896BFEA0070DC66 /* Date.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DBF51462896BFEA0070DC66 /* Date.swift */; };
+		9DBF514A2896D3FF0070DC66 /* CalendarCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DBF51492896D3FF0070DC66 /* CalendarCell.swift */; };
+		9DBF514C2896DB010070DC66 /* TodoItemModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DBF514B2896DB010070DC66 /* TodoItemModel.swift */; };
+		9DBF514F2896DB490070DC66 /* FileCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DBF514E2896DB490070DC66 /* FileCache.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -31,7 +37,13 @@
 		9D7E05D128951B7A0049C9E1 /* CustomFont.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomFont.swift; sourceTree = "<group>"; };
 		9D7E05D328951E500049C9E1 /* CustomColor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomColor.swift; sourceTree = "<group>"; };
 		9D7E05D52895322A0049C9E1 /* DisplayMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DisplayMode.swift; sourceTree = "<group>"; };
-		9D7E05D7289563860049C9E1 /* CustomTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomTextView.swift; sourceTree = "<group>"; };
+		9DBF513E28968CA20070DC66 /* DeadlineDateTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeadlineDateTableViewCell.swift; sourceTree = "<group>"; };
+		9DBF514028968CCB0070DC66 /* ImportantTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportantTableViewCell.swift; sourceTree = "<group>"; };
+		9DBF51442896ABB10070DC66 /* CustomTableView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomTableView.swift; sourceTree = "<group>"; };
+		9DBF51462896BFEA0070DC66 /* Date.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Date.swift; sourceTree = "<group>"; };
+		9DBF51492896D3FF0070DC66 /* CalendarCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarCell.swift; sourceTree = "<group>"; };
+		9DBF514B2896DB010070DC66 /* TodoItemModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoItemModel.swift; sourceTree = "<group>"; };
+		9DBF514E2896DB490070DC66 /* FileCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileCache.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -65,11 +77,13 @@
 			isa = PBXGroup;
 			children = (
 				9D7E05D028950B780049C9E1 /* App&Scene */,
-				9D7E05C028950B4B0049C9E1 /* CurrentTaskViewController.swift */,
-				9D7E05D7289563860049C9E1 /* CustomTextView.swift */,
-				9D7E05D128951B7A0049C9E1 /* CustomFont.swift */,
-				9D7E05D328951E500049C9E1 /* CustomColor.swift */,
-				9D7E05D52895322A0049C9E1 /* DisplayMode.swift */,
+				9DBF51542896DBBD0070DC66 /* Controller */,
+				9DBF514D2896DB2C0070DC66 /* Model */,
+				9DBF51532896DBB40070DC66 /* Views */,
+				9DBF51522896DB960070DC66 /* TableViewCells */,
+				9DBF51502896DB510070DC66 /* FileManager */,
+				9DBF51482896BFF60070DC66 /* Extension */,
+				9DBF51512896DB600070DC66 /* CustomUI */,
 				9D7E05C228950B4B0049C9E1 /* Main.storyboard */,
 				9D7E05C528950B560049C9E1 /* Assets.xcassets */,
 				9D7E05C728950B560049C9E1 /* LaunchScreen.storyboard */,
@@ -85,6 +99,66 @@
 				9D7E05BE28950B4B0049C9E1 /* SceneDelegate.swift */,
 			);
 			path = "App&Scene";
+			sourceTree = "<group>";
+		};
+		9DBF51482896BFF60070DC66 /* Extension */ = {
+			isa = PBXGroup;
+			children = (
+				9DBF51462896BFEA0070DC66 /* Date.swift */,
+			);
+			path = Extension;
+			sourceTree = "<group>";
+		};
+		9DBF514D2896DB2C0070DC66 /* Model */ = {
+			isa = PBXGroup;
+			children = (
+				9DBF514B2896DB010070DC66 /* TodoItemModel.swift */,
+			);
+			path = Model;
+			sourceTree = "<group>";
+		};
+		9DBF51502896DB510070DC66 /* FileManager */ = {
+			isa = PBXGroup;
+			children = (
+				9DBF514E2896DB490070DC66 /* FileCache.swift */,
+			);
+			path = FileManager;
+			sourceTree = "<group>";
+		};
+		9DBF51512896DB600070DC66 /* CustomUI */ = {
+			isa = PBXGroup;
+			children = (
+				9D7E05D128951B7A0049C9E1 /* CustomFont.swift */,
+				9D7E05D328951E500049C9E1 /* CustomColor.swift */,
+				9D7E05D52895322A0049C9E1 /* DisplayMode.swift */,
+			);
+			path = CustomUI;
+			sourceTree = "<group>";
+		};
+		9DBF51522896DB960070DC66 /* TableViewCells */ = {
+			isa = PBXGroup;
+			children = (
+				9DBF514028968CCB0070DC66 /* ImportantTableViewCell.swift */,
+				9DBF513E28968CA20070DC66 /* DeadlineDateTableViewCell.swift */,
+				9DBF51492896D3FF0070DC66 /* CalendarCell.swift */,
+			);
+			path = TableViewCells;
+			sourceTree = "<group>";
+		};
+		9DBF51532896DBB40070DC66 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				9DBF51442896ABB10070DC66 /* CustomTableView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		9DBF51542896DBBD0070DC66 /* Controller */ = {
+			isa = PBXGroup;
+			children = (
+				9D7E05C028950B4B0049C9E1 /* CurrentTaskViewController.swift */,
+			);
+			path = Controller;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -158,12 +232,18 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9DBF514C2896DB010070DC66 /* TodoItemModel.swift in Sources */,
 				9D7E05C128950B4B0049C9E1 /* CurrentTaskViewController.swift in Sources */,
+				9DBF513F28968CA20070DC66 /* DeadlineDateTableViewCell.swift in Sources */,
+				9DBF51452896ABB10070DC66 /* CustomTableView.swift in Sources */,
 				9D7E05D228951B7A0049C9E1 /* CustomFont.swift in Sources */,
 				9D7E05BD28950B4B0049C9E1 /* AppDelegate.swift in Sources */,
 				9D7E05D62895322A0049C9E1 /* DisplayMode.swift in Sources */,
-				9D7E05D8289563860049C9E1 /* CustomTextView.swift in Sources */,
+				9DBF51472896BFEA0070DC66 /* Date.swift in Sources */,
 				9D7E05D428951E500049C9E1 /* CustomColor.swift in Sources */,
+				9DBF514128968CCB0070DC66 /* ImportantTableViewCell.swift in Sources */,
+				9DBF514A2896D3FF0070DC66 /* CalendarCell.swift in Sources */,
+				9DBF514F2896DB490070DC66 /* FileCache.swift in Sources */,
 				9D7E05BF28950B4B0049C9E1 /* SceneDelegate.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -316,7 +396,7 @@
 				INFOPLIST_FILE = "Todo-List/Info.plist";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -344,7 +424,7 @@
 				INFOPLIST_FILE = "Todo-List/Info.plist";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				LD_RUNPATH_SEARCH_PATHS = (
