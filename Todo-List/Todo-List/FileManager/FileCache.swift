@@ -30,13 +30,13 @@ final class FileCache {
         let newFolder = documentDirectory.appendingPathComponent(newFolderName)
         try? FileManager.default.createDirectory(at: newFolder, withIntermediateDirectories: true)
         let file = newFolder.appendingPathComponent(fileName)
+        print(documentDirectory,"\n", newFolder, "\n", file)
         var JSONArray = [[String: Any]]()
         for item in todoItems {
             guard let json = item.value.json as? [String: Any] else {return}
             JSONArray.append(json)
         }
         guard let writeToFile = try? JSONSerialization.data(withJSONObject: JSONArray, options: [.prettyPrinted]) else {return}
-        print("SOME")
         try? writeToFile.write(to: file)
     }
     
@@ -51,10 +51,18 @@ final class FileCache {
         else {return}
         for json in JSONArray {
                 if let item = TodoItem.parse(json: json) {
-                    guard let id = item.identifier else {return}
+                    let id = item.identifier
                     loadArray[id] = item
                 }
             }
         self.todoItems = loadArray
+    }
+    public func removeFile(_ fileName: String) {
+        let newFolderName = "Testing Folder"
+        guard let documentDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else { return }
+        let newFolder = documentDirectory.appendingPathComponent(newFolderName)
+        let file = newFolder.appendingPathComponent(fileName)
+        try? FileManager.default.removeItem(at: file)
+        self.todoItems = [:]
     }
 }

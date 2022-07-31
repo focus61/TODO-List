@@ -6,18 +6,21 @@
 //
 
 import UIKit
-class ImportantTableViewCell: UITableViewCell {
+final class ImportantTableViewCell: UITableViewCell {
     static let identifier = "ImportantTableViewCell"
-    let importantLabel: UILabel = .init(frame: .zero)
+    private let importantLabel: UILabel = .init(frame: .zero)
     let importantSegmentControl: UISegmentedControl = .init(frame: .zero)
-    var displayMode: DisplayMode = .lightMode
+    private var displayMode: DisplayMode = .lightMode
     
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: ImportantTableViewCell.identifier)
         viewConfigure()
     }
-    func fillData(displayMode: DisplayMode) {
+    func fillData(displayMode: DisplayMode, segmentedValue: Int) {
         self.displayMode = displayMode
+        
+        self.importantSegmentControl.selectedSegmentIndex = segmentedValue
+        
     }
     override func layoutSubviews() {
         super.layoutSubviews()
@@ -61,12 +64,6 @@ class ImportantTableViewCell: UITableViewCell {
         importantSegmentControl.insertSegment(with: uninportantImage, at: 0, animated: false)
         importantSegmentControl.insertSegment(withTitle: "нет", at: 1, animated: false)
         importantSegmentControl.insertSegment(with: importantImage, at: 2, animated: false)
-        importantSegmentControl.selectedSegmentIndex = 2
-        if importantSegmentControl.selectedSegmentIndex == 2 {
-            importantSegmentControl.selectedSegmentTintColor(.red)
-        } else {
-            importantSegmentControl.selectedSegmentTintColor(.blue)
-        }
         
     }
     

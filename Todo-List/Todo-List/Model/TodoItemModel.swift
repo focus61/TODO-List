@@ -12,7 +12,7 @@ enum ImportantType {
     case important
 }
 struct TodoItem {
-    let identifier: String?
+    let identifier: String
     let text: String
     let important: ImportantType
     let deadLine: Date?
@@ -20,7 +20,7 @@ struct TodoItem {
     let addTaskDate: Date
     let changeTaskDate: Date?
     
-    init(identifier: String? = UUID().uuidString,
+    init(identifier: String = UUID().uuidString,
          text: String,
          important: ImportantType = .basic,
          deadline: Date? = nil,
@@ -28,11 +28,7 @@ struct TodoItem {
          addTaskDate: Date,
          changeTaskDate: Date? = nil)
     {
-        if identifier == nil {
-            self.identifier = UUID().uuidString
-        } else {
-            self.identifier = identifier
-        }
+        self.identifier = identifier
         self.text = text
         self.important = important
         self.deadLine = deadline

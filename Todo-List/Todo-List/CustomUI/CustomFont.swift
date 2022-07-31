@@ -7,7 +7,7 @@
 
 import UIKit
 
-class CustomFont: UIFont {
+final class CustomFont: UIFont {
     static var largeTitle: UIFont {
         return .systemFont(ofSize: 38, weight: .bold)
     }

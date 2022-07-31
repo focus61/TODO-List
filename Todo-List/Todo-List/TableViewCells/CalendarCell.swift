@@ -6,10 +6,10 @@
 //
 
 import UIKit
-class CalendarCell: UITableViewCell {
+final class CalendarCell: UITableViewCell {
     static let identifier = "CalendarCell"
     let datePicker = UIDatePicker()
-    var displayMode: DisplayMode = .lightMode
+    private var displayMode: DisplayMode = .lightMode
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: CalendarCell.identifier)
         datePickerConfigure()
@@ -22,7 +22,7 @@ class CalendarCell: UITableViewCell {
         super.layoutSubviews()
         datePicker.backgroundColor = CustomColor(displayMode: displayMode).backSecondary
     }
-    func datePickerConfigure() {
+    private func datePickerConfigure() {
         datePicker.backgroundColor = .red
         contentView.addSubview(datePicker)
         separatorInset = UIEdgeInsets(top: 0, left: 0, bottom: 0, right: UIScreen.main.bounds.width)

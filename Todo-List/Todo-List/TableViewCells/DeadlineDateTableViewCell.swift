@@ -6,27 +6,30 @@
 //
 
 import UIKit
-class DeadlineDateTableViewCell: UITableViewCell {
+final class DeadlineDateTableViewCell: UITableViewCell {
     static let identifier = "DeadlineDateTableViewCell"
-    let deadlineLabel: UILabel = .init(frame: .zero)
+    private let deadlineLabel: UILabel = .init(frame: .zero)
     let deadlineSwitch: UISwitch = .init(frame: .zero)
     let changeDeadlineButton: UIButton = .init(type: .system)
-    var displayMode: DisplayMode = .lightMode
-    var deadlineIsOff = true
-    var constrainsLabel: [NSLayoutConstraint] = []
-    var constrainsButton: [NSLayoutConstraint] = []
-    var currentDateString = ""
-    var calendarIsOff = false
+    private var displayMode: DisplayMode = .lightMode
+    private var deadlineIsOff = true
+    private var constrainsLabel: [NSLayoutConstraint] = []
+    private var constrainsButton: [NSLayoutConstraint] = []
+    private var currentDateString = ""
+    private var calendarIsOff = false
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: ImportantTableViewCell.identifier)
         viewConfigure()
     }
     func fillData(displayMode: DisplayMode, deadlineIsOff: Bool, deadlineDate: Date, calendarIsOff: Bool) {
+        if deadlineDate != Date.tomorrow || !deadlineIsOff {
+            deadlineSwitch.isOn = true
+        }
         self.displayMode = displayMode
         self.deadlineIsOff = deadlineIsOff
         let dateFormatter = DateFormatter()
         dateFormatter.locale = Locale(identifier: "ru_RU")
-        dateFormatter.dateFormat = "dd-MMMM-yyyy"
+        dateFormatter.dateFormat = "d MMMM yyyy"
         if !deadlineIsOff {
             currentDateString = dateFormatter.string(from: deadlineDate)
         }
@@ -95,7 +98,7 @@ class DeadlineDateTableViewCell: UITableViewCell {
             NSLayoutConstraint.activate([
                 changeDeadlineButton.topAnchor.constraint(equalTo: contentView.centerYAnchor),
                 changeDeadlineButton.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -5),
-                changeDeadlineButton.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 10),
+                changeDeadlineButton.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 11),
                 changeDeadlineButton.widthAnchor.constraint(equalToConstant: 200)
             ])
             changeDeadlineButton.setTitle(currentDateString, for: .normal)

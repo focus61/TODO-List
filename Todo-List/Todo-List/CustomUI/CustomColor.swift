@@ -7,8 +7,7 @@
 
 import UIKit
 
-class CustomColor {
-    lazy var colors: [UIColor] = [supportOverlay, supportSeparator, supportNavBarBlur, labelPrimary, labelDisable, labelSecondary,labelTertiary, red, green, blue, gray, grayLight, white, backIosPrimary, backPrimary, backSecondary, backElevated]
+final class CustomColor {
     var displayMode: DisplayMode
     init(displayMode: DisplayMode = .lightMode) {
         self.displayMode = displayMode
