@@ -9,16 +9,14 @@ import UIKit
 
 class CurrentTaskViewController: UIViewController {
     private var displayMode: DisplayMode = .lightMode
-    var isChange = false
-    var fileName = "JSON"
-    let myIdentifier = "id"
+    
     let fileCache = FileCache()
     var currentItem: TodoItem?
     var todoItemId = ""
-    
+    var delegate: Update?
     var tableViewHeightConstraint: NSLayoutConstraint?
     var tableViewWithCalendarConstraint: NSLayoutConstraint?
-    
+    var isNewTask = true
     private var cancelBarItem = UIBarButtonItem()
     private var saveBarItem = UIBarButtonItem()
     private let startHeightTextView: CGFloat = 120
@@ -47,12 +45,16 @@ class CurrentTaskViewController: UIViewController {
     private let scrollView: UIScrollView = .init(frame: .zero)
     private let containerView: UIView = .init(frame: .zero)
     private var containerViewHeightConstraint: NSLayoutConstraint?
-    private var isFirstUse = false
-
+    var isChange = false
+    var counter = 1
     override func viewDidLoad() {
         super.viewDidLoad()
         configureView()
-        getData()
+        if isChange {
+            getData()
+        }
+        loadData()
+        print(currentItem?.isTaskComplete)
 //        NotificationCenter.default.addObserver(self, selector: #selector(updateTextView), name: UIResponder.keyboardWillShowNotification, object: nil)
 //        NotificationCenter.default.addObserver(self, selector: #selector(updateTextView), name: UIResponder.keyboardWillHideNotification, object: nil)
     }
@@ -90,9 +92,11 @@ class CurrentTaskViewController: UIViewController {
         scrollView.addGestureRecognizer(tap)
     }
     
+    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        counter = 1
+    }
     private func textViewConfigure() {
         containerView.addSubview(textView)
-        textView.sizeToFit()
         textView.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
             textView.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 20),
@@ -143,23 +147,30 @@ class CurrentTaskViewController: UIViewController {
     }
     private func navigationItemConfigure() {
         title = "Дело"
-        
+        navigationItem.largeTitleDisplayMode = .never
         cancelBarItem = UIBarButtonItem(title: "Отменить", style: .done, target: self, action: #selector(cancelTarget))
         navigationItem.leftBarButtonItem = cancelBarItem
         
         saveBarItem = UIBarButtonItem(title: "Сохранить", style: .done, target: self, action: #selector(saveTask))
         navigationItem.rightBarButtonItem = saveBarItem
         saveBarItem.isEnabled = false
-
     }
-    
+    private func loadData() {
+        do {
+            try fileCache.loadFromFile(FileCache.fileName)
+        } catch FileCacheError.loadError(let loadErrorMessage) {
+            let alert = Helpers.shared.addAlert(title: "Внимание", message: loadErrorMessage)
+            present(alert, animated: true, completion: nil)
+        } catch {
+            let alert = Helpers.shared.addAlert(title: "Внимание", message: "Произошла ошибка")
+            present(alert, animated: true, completion: nil)
+        }
+        
+    }
     private func getData() {
-        fileCache.loadFromFile(fileName)
-        guard let id = fileCache.todoItems.first?.key,
-              let item = fileCache.todoItems.first?.value
-        else {return}
-        self.currentItem = item
-        self.todoItemId = id
+        guard let item = currentItem else { return }
+        self.todoItemId = item.id
+        print(item.id)
         switch item.important {
             case .important:           self.importantValue = 2
             case .basic:               self.importantValue = 1
@@ -172,16 +183,17 @@ class CurrentTaskViewController: UIViewController {
         }
         self.textView.text = item.text
         addTaskDate = item.addTaskDate
-        isFirstUse = true
-        isChange = true
         self.text = item.text
         let size = CGSize(width: view.frame.width, height: .infinity)
         let estimatedSize = textView.sizeThatFits(size)
-        textView.constraints.forEach { constraint in
-            if constraint.firstAttribute == .height {
-                constraint.constant = estimatedSize.height
+        if estimatedSize.height > startHeightTextView {
+            textView.constraints.forEach { constraint in
+                if constraint.firstAttribute == .height {
+                    constraint.constant = estimatedSize.height
+                }
             }
         }
+        
     }
     @objc private func saveTask() {
         let itemText = self.text
@@ -211,39 +223,67 @@ class CurrentTaskViewController: UIViewController {
         //MARK: ---------------
 
         let changeTaskDate: Date? = isChange ? Date.now : nil
-        let newItem = TodoItem(identifier: myIdentifier,text: itemText, important: itemImportant, deadline: itemDeadline, isTaskComplete: isTaskComplete, addTaskDate: addTaskDate ?? Date.now, changeTaskDate: changeTaskDate)
-        let id = newItem.identifier
-        fileCache.deleteTask(id: id)
-        fileCache.addTask(item: newItem, id: id)
-        fileCache.saveToFile(fileName)
-        let alert = UIAlertController(title: nil, message: "Задача сохранена", preferredStyle: .alert)
-        let action = UIAlertAction(title: "OK", style: .default)
-        alert.addAction(action)
-        self.present(alert, animated: true)
-    }
-    
-    @objc private func deleteTask() {
-        fileCache.removeFile(fileName)
-        let alert = UIAlertController(title: nil, message: "Задача удалена", preferredStyle: .alert)
-        let action = UIAlertAction(title: "OK", style: .default) { _ in
-            exit(1)
+        let newItem = TodoItem(id: todoItemId, text: itemText, important: itemImportant, deadline: itemDeadline, isTaskComplete: isTaskComplete, addTaskDate: addTaskDate ?? Date.now, changeTaskDate: changeTaskDate)
+        fileCache.addTask(item: newItem)
+        do {
+            try fileCache.saveToFile(FileCache.fileName)
+            let alert = UIAlertController(title: nil, message: "Задача сохранена", preferredStyle: .alert)
+            let action = UIAlertAction(title: "OK", style: .default) {[weak self] _ in
+                self?.delegate?.updateDate()
+            }
+            alert.addAction(action)
+            self.present(alert, animated: true)
+        } catch FileCacheError.saveError(let saveErrorMessage) {
+            let alert = Helpers.shared.addAlert(title: "Внимание", message: saveErrorMessage)
+            present(alert, animated: true, completion: nil)
+        } catch  {
+            let alert = Helpers.shared.addAlert(title: "Внимание", message: "Произошла ошибка")
+            present(alert, animated: true, completion: nil)
         }
-        alert.addAction(action)
-        self.present(alert, animated: true)
+
+    }
+    @objc private func deleteTask() {
+        do {
+            print(fileCache.todoItems, "CURRENT")
+            self.fileCache.deleteTask(id: self.todoItemId)
+            print(self.fileCache.todoItems)
+            try fileCache.saveToFile(FileCache.fileName)
+            let alert = UIAlertController(title: nil, message: "Задача удалена", preferredStyle: .alert)
+            let action = UIAlertAction(title: "OK", style: .default) { [weak self] _ in
+                self?.delegate?.updateDate()
+                self?.navigationController?.popToRootViewController(animated: true)
+            }
+            alert.addAction(action)
+            self.present(alert, animated: true)
+        } catch FileCacheError.saveError(let saveErrorMessage) {
+            let alert = Helpers.shared.addAlert(title: "Внимание", message: saveErrorMessage)
+            present(alert, animated: true, completion: nil)
+        } catch  {
+            let alert = Helpers.shared.addAlert(title: "Внимание", message: "Произошла ошибка")
+            present(alert, animated: true, completion: nil)
+        }
     }
     
     @objc private func cancelTarget() {
+        navigationController?.popToRootViewController(animated: true)
     }
     
     
     @objc private func tapForEndEditing() {
         view.endEditing(true)
     }
-    
+    override func viewWillLayoutSubviews() {
+        super.viewWillLayoutSubviews()
+        print("viewWillLayoutSubviews")
+    }
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         displayMode = traitCollection.userInterfaceStyle == .dark ? .darkMode : .lightMode
-        tableView.reloadData()
+        if counter == 1 {
+            tableView.reloadData()
+        }
+        print("viewDIDLayoutSubviews")
+
         colorChangeSettings()
     }
 //    MARK: -Changed color for display mode
@@ -255,7 +295,7 @@ class CurrentTaskViewController: UIViewController {
         tableView.backgroundColor = CustomColor(displayMode: displayMode).backSecondary
         deleteButton.backgroundColor = CustomColor(displayMode: displayMode).backSecondary
         deleteButton.titleLabel?.tintColor =  CustomColor(displayMode: displayMode).red
-        if !isFirstUse {
+        if !isChange {
             textView.textColor = CustomColor(displayMode: displayMode).labelTertiary
         } else {
             textView.textColor = CustomColor(displayMode: displayMode).labelPrimary
@@ -265,7 +305,7 @@ class CurrentTaskViewController: UIViewController {
 //MARK: - textViewDidChange - textViewDidBeginEditing
 extension CurrentTaskViewController: UITextViewDelegate {
     func textViewDidChange(_ textView: UITextView) {
-        if isFirstUse {
+        if isChange {
             guard let text = textView.text else {return}
             self.text = text
             let size = CGSize(width: view.frame.width, height: .infinity)
@@ -301,9 +341,9 @@ extension CurrentTaskViewController: UITextViewDelegate {
         }
     }
     func textViewDidBeginEditing(_ textView: UITextView) {
-        if !isFirstUse && textView.textColor == CustomColor(displayMode: displayMode).labelTertiary {
+        if !isChange && textView.textColor == CustomColor(displayMode: displayMode).labelTertiary {
             self.textView.text = nil
-            isFirstUse = true
+            isChange = true
         }
     }
 }

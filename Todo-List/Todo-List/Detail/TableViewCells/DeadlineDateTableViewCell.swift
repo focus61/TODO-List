@@ -27,14 +27,13 @@ final class DeadlineDateTableViewCell: UITableViewCell {
         }
         self.displayMode = displayMode
         self.deadlineIsOff = deadlineIsOff
-        let dateFormatter = DateFormatter()
-        dateFormatter.locale = Locale(identifier: "ru_RU")
-        dateFormatter.dateFormat = "d MMMM yyyy"
+        
         if !deadlineIsOff {
-            currentDateString = dateFormatter.string(from: deadlineDate)
+            currentDateString = Date.currentDateFormatForDeadline(date: deadlineDate)
         }
         self.calendarIsOff = calendarIsOff
     }
+    
     override func layoutSubviews() {
         super.layoutSubviews()
         contentView.backgroundColor = CustomColor(displayMode: displayMode).backSecondary

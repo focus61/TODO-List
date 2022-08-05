@@ -18,7 +18,6 @@ final class ImportantTableViewCell: UITableViewCell {
     }
     func fillData(displayMode: DisplayMode, segmentedValue: Int) {
         self.displayMode = displayMode
-        
         self.importantSegmentControl.selectedSegmentIndex = segmentedValue
         
     }

@@ -97,7 +97,7 @@ final class CustomColor {
     }
     var backSecondary: UIColor {
         let lightColor = UIColor(red: 1, green: 1, blue: 1, alpha: 1)
-        let darkColor = UIColor(red: 0.14, green: 0.14, blue: 0.16, alpha: 1)
+        let darkColor = UIColor(red: 0.145, green: 0.145, blue: 0.155, alpha: 1)
         return switchedMode(lightColorRGB: lightColor, darkColorRGB: darkColor)
     }
     var backElevated: UIColor {
