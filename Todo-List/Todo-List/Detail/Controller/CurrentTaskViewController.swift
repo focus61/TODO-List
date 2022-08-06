@@ -53,8 +53,8 @@ class CurrentTaskViewController: UIViewController {
         if isChange {
             getData()
         }
+        print(navigationController?.viewControllers)
         loadData()
-        print(currentItem?.isTaskComplete)
 //        NotificationCenter.default.addObserver(self, selector: #selector(updateTextView), name: UIResponder.keyboardWillShowNotification, object: nil)
 //        NotificationCenter.default.addObserver(self, selector: #selector(updateTextView), name: UIResponder.keyboardWillHideNotification, object: nil)
     }
@@ -159,8 +159,10 @@ class CurrentTaskViewController: UIViewController {
         do {
             try fileCache.loadFromFile(FileCache.fileName)
         } catch FileCacheError.loadError(let loadErrorMessage) {
-            let alert = Helpers.shared.addAlert(title: "Внимание", message: loadErrorMessage)
-            present(alert, animated: true, completion: nil)
+            if !fileCache.todoItems.isEmpty {
+                let alert = Helpers.shared.addAlert(title: "Внимание", message: loadErrorMessage)
+                present(alert, animated: true, completion: nil)
+            }
         } catch {
             let alert = Helpers.shared.addAlert(title: "Внимание", message: "Произошла ошибка")
             present(alert, animated: true, completion: nil)
@@ -170,7 +172,6 @@ class CurrentTaskViewController: UIViewController {
     private func getData() {
         guard let item = currentItem else { return }
         self.todoItemId = item.id
-        print(item.id)
         switch item.important {
             case .important:           self.importantValue = 2
             case .basic:               self.importantValue = 1
@@ -178,7 +179,6 @@ class CurrentTaskViewController: UIViewController {
         }
         if let itemDeadline = item.deadLine {
             self.changedDeadlineDate = itemDeadline
-            print(itemDeadline)
             self.deadlineIsOff = false
         }
         self.textView.text = item.text
@@ -198,13 +198,11 @@ class CurrentTaskViewController: UIViewController {
     @objc private func saveTask() {
         let itemText = self.text
         var itemImportant: ImportantType = .basic
-        
         if importantValue == 0 {
             itemImportant = .unimportant
         } else if importantValue == 2 {
             itemImportant = .important
         }
-        
         var itemDeadline: Date?
         if deadlineIsOff && calendarIsOff {
             itemDeadline = nil
@@ -217,11 +215,7 @@ class CurrentTaskViewController: UIViewController {
         } else {
             itemDeadline = changedDeadlineDate
         }
-
-        //MARK: -Еще не готово-
-        let isTaskComplete = false
-        //MARK: ---------------
-
+        let isTaskComplete = currentItem?.isTaskComplete ?? false
         let changeTaskDate: Date? = isChange ? Date.now : nil
         let newItem = TodoItem(id: todoItemId, text: itemText, important: itemImportant, deadline: itemDeadline, isTaskComplete: isTaskComplete, addTaskDate: addTaskDate ?? Date.now, changeTaskDate: changeTaskDate)
         fileCache.addTask(item: newItem)
@@ -234,19 +228,19 @@ class CurrentTaskViewController: UIViewController {
             alert.addAction(action)
             self.present(alert, animated: true)
         } catch FileCacheError.saveError(let saveErrorMessage) {
-            let alert = Helpers.shared.addAlert(title: "Внимание", message: saveErrorMessage)
-            present(alert, animated: true, completion: nil)
+            if !fileCache.todoItems.isEmpty {
+                let alert = Helpers.shared.addAlert(title: "Внимание", message: saveErrorMessage)
+                present(alert, animated: true, completion: nil)
+            }
         } catch  {
             let alert = Helpers.shared.addAlert(title: "Внимание", message: "Произошла ошибка")
             present(alert, animated: true, completion: nil)
         }
-
     }
+    
     @objc private func deleteTask() {
         do {
-            print(fileCache.todoItems, "CURRENT")
             self.fileCache.deleteTask(id: self.todoItemId)
-            print(self.fileCache.todoItems)
             try fileCache.saveToFile(FileCache.fileName)
             let alert = UIAlertController(title: nil, message: "Задача удалена", preferredStyle: .alert)
             let action = UIAlertAction(title: "OK", style: .default) { [weak self] _ in
@@ -265,25 +259,23 @@ class CurrentTaskViewController: UIViewController {
     }
     
     @objc private func cancelTarget() {
-        navigationController?.popToRootViewController(animated: true)
+        dismiss(animated: true, completion: nil)
     }
-    
-    
+
     @objc private func tapForEndEditing() {
         view.endEditing(true)
     }
+    
     override func viewWillLayoutSubviews() {
         super.viewWillLayoutSubviews()
-        print("viewWillLayoutSubviews")
     }
+    
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         displayMode = traitCollection.userInterfaceStyle == .dark ? .darkMode : .lightMode
         if counter == 1 {
             tableView.reloadData()
         }
-        print("viewDIDLayoutSubviews")
-
         colorChangeSettings()
     }
 //    MARK: -Changed color for display mode
@@ -360,7 +352,7 @@ extension CurrentTaskViewController: UITableViewDelegate, UITableViewDataSource 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         if indexPath.row == 0 {
             guard let cell = tableView.dequeueReusableCell(withIdentifier: ImportantTableViewCell.identifier, for: indexPath) as? ImportantTableViewCell else { return UITableViewCell() }
-            cell.fillData(displayMode: displayMode, segmentedValue: importantValue ?? 2)
+            cell.fillData(displayMode: displayMode, segmentedValue: importantValue ?? 1)
             cell.importantSegmentControl.addTarget(self, action: #selector(segmentImportantTarget(sender:)), for: .valueChanged)
             return cell
         } else if indexPath.row == 1 {
@@ -406,9 +398,7 @@ extension CurrentTaskViewController: UITableViewDelegate, UITableViewDataSource 
         let timeFormatter = DateFormatter()
         timeFormatter.timeStyle = DateFormatter.Style.short
         self.changedDeadlineDate = sender.date
-        
         self.tableView.reloadData()
-        // do what you want to do with the string.
     }
     @objc func addCalendarForDeadline() {
          if calendarIsOff {
@@ -451,13 +441,13 @@ extension CurrentTaskViewController: UITableViewDelegate, UITableViewDataSource 
              }
          }
         view.layoutIfNeeded()
-        calendarIsOff = !calendarIsOff
+        calendarIsOff.toggle()
         tableView.reloadData()
     }
     @objc func changeSwitchValue() {
-        deadlineIsOff = !deadlineIsOff
+        deadlineIsOff.toggle()
         if deadlineIsOff && !calendarIsOff {
-            calendarIsOff = !calendarIsOff
+            calendarIsOff.toggle()
             changedDeadlineDate = nil
             UIView.animate(withDuration: 0.5) { [weak self] in
                 guard let self = self else {return}

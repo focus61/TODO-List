@@ -9,37 +9,79 @@ import UIKit
 protocol Update {
     func updateDate()
 }
-protocol Show {
-    func show()
+protocol ShowAndHide {
+    func show(newItem: [TodoItem])
+    func hide(newItem: [TodoItem])
 }
 protocol UpdateEclipse {
     func updateEclipse(item: TodoItem)
 }
-protocol Hide {
-    func hide()
-}
+
 class AllTaskViewController: UITableViewController {
     var allTask = [TodoItem]()
+    var filteredAllTask = [TodoItem]()
+    var isFiltered = true
     let fileCache = FileCache()
-    let button = UIButton(type: .custom)
+    let button = UIButton()
     var isLoad = false
     var displayMode: DisplayMode = .lightMode
     var counter = 1
+    
     override func viewDidLoad() {
         super.viewDidLoad()
-//        displayMode = traitCollection.userInterfaceStyle == .dark ? .darkMode : .lightMode
         view.addSubview(button)
-
         configure()
         getData()
+        NotificationCenter.default.addObserver(self, selector: #selector(changeOrientation), name: UIDevice.orientationDidChangeNotification, object: nil)
         self.navigationController?.view.addSubview(button)
     }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self, name: UIDevice.orientationDidChangeNotification, object: nil)
+    }
+    
+    @objc func changeOrientation() {
+        let buttonSize = CGSize(width: 44, height: 44)
+        
+        if UIDevice.current.orientation.isLandscape {
+            button.frame.origin = CGPoint(x: view.center.x - 25, y: view.frame.height - 100)
+            button.frame.size = buttonSize
+        } else {
+            button.frame.origin = CGPoint(x: view.center.x - 25, y: view.frame.height - 100)
+            button.frame.size = buttonSize
+        }
+}
+//    override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
+//        let buttonSize = CGSize(width: 44, height: 44)
+//        let orientation = UIDevice.current.orientation.rawValue
+//        switch orientation {
+//        case 1:
+//            print("OK1")
+//
+//            print(view.center.x, view.center.y)
+//
+//        case 3:
+//            print("OK3")
+//
+//
+//        case 4:
+//            print("OK4")
+//
+//            button.frame.origin = CGPoint(x: 200, y: 200)
+//            button.frame.size = buttonSize
+//            print(view.center.x, view.center.y)
+//            view.layoutIfNeeded()
+//
+//
+//        default: break
+//
+//        }
+//    }
 
     private func configure() {
         configureNavigationItem()
         buttonConfigure()
         tableViewConfigure()
-//        configureTableView()
     }
     func buttonConfigure() {
         let image = UIImage(named: "Union")
@@ -47,30 +89,24 @@ class AllTaskViewController: UITableViewController {
         button.addTarget(self, action: #selector(addTask), for: .touchUpInside)
     }
     func updateLayer() {
-        
-//        let shadowPath0 = UIBezierPath(roundedRect: button.bounds, cornerRadius: 25)
-//        let layer0 = CALayer()
-//        layer0.shadowPath = shadowPath0.cgPath
-//        layer0.shadowColor = UIColor(red: 0, green: 0.287, blue: 0.6, alpha: 0.6).cgColor
-//        layer0.shadowOpacity = 1
-//        layer0.shadowRadius = 20
-//        layer0.shadowOffset = CGSize(width: 0, height: 8)
-//        layer0.bounds = button.bounds
-//        layer0.position = button.center
-//        button.layer.addSublayer(layer0)
-        
+        let buttonSize = CGSize(width: 44, height: 44)
         button.frame.origin = CGPoint(x: view.center.x - 25, y: view.frame.height - 100)
-        button.frame.size = CGSize(width: 44, height: 44)
-        button.layer.cornerRadius = 22
+        button.frame.size = buttonSize
+        button.layer.cornerRadius = buttonSize.height / 2
+        button.clipsToBounds = true
+        button.layer.masksToBounds = false
+        button.layer.shadowRadius = 7
+        button.layer.shadowOpacity = 0.6
+        button.layer.shadowOffset = CGSize(width: 0, height: 5)
+        button.layer.shadowColor = CustomColor(displayMode: .lightMode).blue.withAlphaComponent(0.9).cgColor
     }
 
     func tableViewConfigure() {
         tableView.register(AllTaskCell.self, forCellReuseIdentifier: AllTaskCell.identifier)
         tableView.register(CustomHeaderView.self, forHeaderFooterViewReuseIdentifier: CustomHeaderView.identifier)
+        tableView.register(AddTaskCell.self, forCellReuseIdentifier: AddTaskCell.identifier)
         tableView.delegate = self
         tableView.dataSource = self
-//        tableView.estimatedRowHeight = 100
-//        tableView.rowHeight = UITableView.automaticDimension
     }
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
@@ -88,18 +124,22 @@ class AllTaskViewController: UITableViewController {
                 val1.addTaskDate < val2.addTaskDate
             })
         } catch FileCacheError.loadError(let loadErrorMessage) {
-            let alert = Helpers.shared.addAlert(title: "Внимание", message: loadErrorMessage)
-            present(alert, animated: true, completion: nil)
+            if !(allTask.isEmpty && fileCache.todoItems.isEmpty) {
+                let alert = Helpers.shared.addAlert(title: "Внимание", message: loadErrorMessage)
+                present(alert, animated: true, completion: nil)
+            }
         } catch {
             let alert = Helpers.shared.addAlert(title: "Внимание", message: "Произошла ошибка")
             present(alert, animated: true, completion: nil)
         }
+        
+        self.filteredAllTask = allTask.filter { !$0.isTaskComplete }
+        if allTask.count == filteredAllTask.count { isFiltered = true }
     }
     
     private func configureNavigationItem() {
         title = "Мои дела"
         navigationController?.navigationBar.prefersLargeTitles = true
-        
     }
     
     override func viewDidLayoutSubviews() {
@@ -109,7 +149,7 @@ class AllTaskViewController: UITableViewController {
             tableView.reloadData()
             counter = 0
         }
-        
+        view.setNeedsDisplay()
         changeColors()
         
     }
@@ -141,9 +181,9 @@ class AllTaskViewController: UITableViewController {
     @objc func addTask() {
         let vc = CurrentTaskViewController()
         vc.delegate = self
-        
-        navigationController?.pushViewController(vc, animated: true)
-//        navigationController?.present(vc, animated: true, completion: nil)
+        let navCont = UINavigationController(rootViewController: vc)
+        print(navigationController?.modalPresentationStyle.rawValue)
+        navigationController?.present(navCont, animated: true, completion: nil)
     }
 }
 extension AllTaskViewController {
@@ -151,17 +191,36 @@ extension AllTaskViewController {
         return 1
     }
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return allTask.count
+        if allTask.count == 0 && filteredAllTask.count == 0 {
+            return 0
+        }
+        if isFiltered {
+            return filteredAllTask.count + 1
+        }
+        return allTask.count + 1
     }
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        guard let cell = tableView.dequeueReusableCell(withIdentifier: AllTaskCell.identifier, for: indexPath) as? AllTaskCell else { return UITableViewCell() }
-        let item = allTask[indexPath.row]
-        cell.taskDescriptionLabel.preferredMaxLayoutWidth = tableView.bounds.width
-        cell.fillData(task: item, currentIndexpath: indexPath.row, displayMode: displayMode)
-        cell.delegate = self
-        cell.layoutIfNeeded()
-        return cell
+        var allItem = [TodoItem]()
+        if isFiltered {
+            allItem = filteredAllTask
+        } else {
+            allItem = allTask
+        }
+        
+        if indexPath.row == allItem.count {
+            guard let cell = tableView.dequeueReusableCell(withIdentifier: AddTaskCell.identifier, for: indexPath) as? AddTaskCell else { return UITableViewCell() }
+            cell.fillData(displayMode: displayMode)
+            return cell
+        } else {
+            guard let cell = tableView.dequeueReusableCell(withIdentifier: AllTaskCell.identifier, for: indexPath) as? AllTaskCell else { return UITableViewCell() }
+
+            
+            let item = allItem[indexPath.row]
+            cell.fillData(task: item, currentIndexpath: indexPath.row, displayMode: displayMode, tableViewWidth: tableView.bounds.width)
+            cell.delegate = self
+            return cell
+        }
     }
     @objc func changeEclipseStatus(_ sender: UIButton) {
     }
@@ -171,21 +230,34 @@ extension AllTaskViewController {
 extension AllTaskViewController {
     
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        let item = allTask[indexPath.row]
-        let vc = CurrentTaskViewController()
-        vc.currentItem = item
-        vc.isChange = true
-        vc.delegate = self
-        navigationController?.pushViewController(vc, animated: true)
+        var itemArray = [TodoItem]()
+        if isFiltered {
+            itemArray = filteredAllTask
+        } else {
+            itemArray = allTask
+        }
+        if indexPath.row == itemArray.count {
+            let vc = CurrentTaskViewController()
+            vc.delegate = self
+            navigationController?.pushViewController(vc, animated: true)
+        } else {
+            let item = itemArray[indexPath.row]
+            let vc = CurrentTaskViewController()
+            vc.currentItem = item
+            vc.isChange = true
+            vc.delegate = self
+            navigationController?.pushViewController(vc, animated: true)
+        }
     }
+        
     override func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
         return 50
     }
     override func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
         guard let header = tableView.dequeueReusableHeaderFooterView(withIdentifier: CustomHeaderView.identifier) as? CustomHeaderView else { return nil }
         let count = allTask.filter { $0.isTaskComplete }.count
-        print(count)
-        header.fillData(countTaskComplete: count, displayMode: displayMode)
+        if count == 0 { return nil}
+        header.fillData(countTaskComplete: count, displayMode: displayMode, allTask: allTask)
         header.delegate = self
         return header
     }
@@ -199,12 +271,13 @@ extension AllTaskViewController {
         return nil
     }
 }
-extension AllTaskViewController: Update{
+extension AllTaskViewController: Update {
     func updateDate() {
         getData()
         self.tableView.reloadData()
     }
 }
+
 extension AllTaskViewController: UpdateEclipse {
     func updateEclipse(item: TodoItem) {
         fileCache.deleteTask(id: item.id)
@@ -219,13 +292,17 @@ extension AllTaskViewController: UpdateEclipse {
             present(alert, animated: true, completion: nil)
         }
         getData()
+        
         self.tableView.reloadData()
     }
-    
-    
 }
-extension AllTaskViewController: Show {
-    func show() {
+extension AllTaskViewController: ShowAndHide {
+    func show(newItem: [TodoItem]) {
+        self.isFiltered = false
+        self.tableView.reloadData()
+    }
+    func hide(newItem: [TodoItem]) {
+        self.isFiltered = true
         self.tableView.reloadData()
     }
 }

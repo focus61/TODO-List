@@ -63,21 +63,9 @@ final class ImportantTableViewCell: UITableViewCell {
         importantSegmentControl.insertSegment(with: uninportantImage, at: 0, animated: false)
         importantSegmentControl.insertSegment(withTitle: "нет", at: 1, animated: false)
         importantSegmentControl.insertSegment(with: importantImage, at: 2, animated: false)
-        
     }
-    
-    
-    
     
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
-    }
-}
-extension UISegmentedControl{
-    func selectedSegmentTintColor(_ color: UIColor) {
-        self.setTitleTextAttributes([.foregroundColor: color], for: .selected)
-    }
-    func unselectedSegmentTintColor(_ color: UIColor) {
-        self.setTitleTextAttributes([.foregroundColor: color], for: .normal)
     }
 }

@@ -33,7 +33,6 @@ final class CalendarCell: UITableViewCell {
             datePicker.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
             datePicker.trailingAnchor.constraint(equalTo: contentView.trailingAnchor)
         ])
-        print(datePicker.subviews)
         datePicker.locale = Locale(identifier: "ru_RU")
         datePicker.datePickerMode = .date
         datePicker.preferredDatePickerStyle = .inline

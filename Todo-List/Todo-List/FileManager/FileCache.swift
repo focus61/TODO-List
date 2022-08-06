@@ -42,9 +42,8 @@ final class FileCache {
             throw FileCacheError.saveError("Ошибка сохранения в файл")
         }
             try? writeToFile.write(to: file)
-        print("writeToFile.write(to: file)")
-
     }
+    
     func loadFromFile(_ fileName: String) throws {
         guard let documentDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else { return }
         let file = documentDirectory.appendingPathComponent(fileName)

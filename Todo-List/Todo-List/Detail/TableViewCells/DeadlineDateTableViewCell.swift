@@ -22,7 +22,7 @@ final class DeadlineDateTableViewCell: UITableViewCell {
         viewConfigure()
     }
     func fillData(displayMode: DisplayMode, deadlineIsOff: Bool, deadlineDate: Date, calendarIsOff: Bool) {
-        if deadlineDate != Date.tomorrow || !deadlineIsOff {
+        if !deadlineIsOff {
             deadlineSwitch.isOn = true
         }
         self.displayMode = displayMode
@@ -86,8 +86,7 @@ final class DeadlineDateTableViewCell: UITableViewCell {
         deadlineSwitch.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
             deadlineSwitch.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
-            deadlineSwitch.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -10),
-            deadlineSwitch.leadingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -61)
+            deadlineSwitch.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -10)
         ])
     }
     private func changeDeadlineButtonConfigure(deadlineIsOff: Bool) {
