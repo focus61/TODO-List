@@ -21,6 +21,9 @@ final class CustomHeaderView: UITableViewHeaderFooterView {
         countTaskLabelConfigure()
         showHideButtonConfigure()
     }
+    deinit{
+        print("Deinit")
+    }
     
     override func layoutSubviews() {
         super.layoutSubviews()
@@ -73,9 +76,15 @@ final class CustomHeaderView: UITableViewHeaderFooterView {
 }
 
 extension CustomHeaderView {
-    func fillData(countTaskComplete: Int, displayMode: DisplayMode, allTask: [TodoItem]) {
+    func fillData(countTaskComplete: Int, displayMode: DisplayMode, allTask: [TodoItem], headerIsShow: Bool) {
         countTaskLabel.text = "Выполнено - \(countTaskComplete)"
         self.allTask = allTask
         self.displayMode = displayMode
+        self.isShow = headerIsShow
+        if headerIsShow {
+            showHideButton.setTitle("Показать", for: .normal)
+        } else {
+            showHideButton.setTitle("Скрыть", for: .normal)
+        }
     }
 }

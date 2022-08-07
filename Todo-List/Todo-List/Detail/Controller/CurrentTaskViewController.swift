@@ -53,7 +53,6 @@ class CurrentTaskViewController: UIViewController {
         if isChange {
             getData()
         }
-        print(navigationController?.viewControllers)
         loadData()
 //        NotificationCenter.default.addObserver(self, selector: #selector(updateTextView), name: UIResponder.keyboardWillShowNotification, object: nil)
 //        NotificationCenter.default.addObserver(self, selector: #selector(updateTextView), name: UIResponder.keyboardWillHideNotification, object: nil)

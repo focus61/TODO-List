@@ -10,6 +10,7 @@ import UIKit
 final class AddTaskCell: UITableViewCell {
     private let newTaskLabel = UILabel()
     static let identifier = "AddTaskCell"
+    private let leftInsetSizeButton: CGFloat = 24
     private var displayMode: DisplayMode = .lightMode
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: AddTaskCell.identifier)
@@ -26,7 +27,7 @@ final class AddTaskCell: UITableViewCell {
     private func labelConfigure() {
         contentView.addSubview(newTaskLabel)
         newTaskLabel.translatesAutoresizingMaskIntoConstraints = false
-        let leftInset = InsetConstants.horizontalInsetBetweenElements.value + WindowInsetConstants.leading.value + 24
+        let leftInset = InsetConstants.horizontalInsetBetweenElements.value + WindowInsetConstants.leading.value + leftInsetSizeButton
         NSLayoutConstraint.activate([
             newTaskLabel.topAnchor.constraint(equalTo: contentView.topAnchor, constant: InsetConstants.verticalInsetBetweenElements.value),
             newTaskLabel.trailingAnchor.constraint(equalTo: contentView.centerXAnchor),

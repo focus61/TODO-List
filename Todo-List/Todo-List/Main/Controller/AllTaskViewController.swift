@@ -24,9 +24,9 @@ class AllTaskViewController: UITableViewController {
     let fileCache = FileCache()
     let button = UIButton()
     var isLoad = false
+    var headerIsShow = true
     var displayMode: DisplayMode = .lightMode
     var counter = 1
-    
     override func viewDidLoad() {
         super.viewDidLoad()
         view.addSubview(button)
@@ -35,7 +35,7 @@ class AllTaskViewController: UITableViewController {
         NotificationCenter.default.addObserver(self, selector: #selector(changeOrientation), name: UIDevice.orientationDidChangeNotification, object: nil)
         self.navigationController?.view.addSubview(button)
     }
-
+    
     deinit {
         NotificationCenter.default.removeObserver(self, name: UIDevice.orientationDidChangeNotification, object: nil)
     }
@@ -50,34 +50,8 @@ class AllTaskViewController: UITableViewController {
             button.frame.origin = CGPoint(x: view.center.x - 25, y: view.frame.height - 100)
             button.frame.size = buttonSize
         }
-}
-//    override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
-//        let buttonSize = CGSize(width: 44, height: 44)
-//        let orientation = UIDevice.current.orientation.rawValue
-//        switch orientation {
-//        case 1:
-//            print("OK1")
-//
-//            print(view.center.x, view.center.y)
-//
-//        case 3:
-//            print("OK3")
-//
-//
-//        case 4:
-//            print("OK4")
-//
-//            button.frame.origin = CGPoint(x: 200, y: 200)
-//            button.frame.size = buttonSize
-//            print(view.center.x, view.center.y)
-//            view.layoutIfNeeded()
-//
-//
-//        default: break
-//
-//        }
-//    }
-
+    }
+    
     private func configure() {
         configureNavigationItem()
         buttonConfigure()
@@ -100,7 +74,7 @@ class AllTaskViewController: UITableViewController {
         button.layer.shadowOffset = CGSize(width: 0, height: 5)
         button.layer.shadowColor = CustomColor(displayMode: .lightMode).blue.withAlphaComponent(0.9).cgColor
     }
-
+    
     func tableViewConfigure() {
         tableView.register(AllTaskCell.self, forCellReuseIdentifier: AllTaskCell.identifier)
         tableView.register(CustomHeaderView.self, forHeaderFooterViewReuseIdentifier: CustomHeaderView.identifier)
@@ -118,6 +92,7 @@ class AllTaskViewController: UITableViewController {
     }
     
     private func getData() {
+        print("Get data")
         do {
             try fileCache.loadFromFile(FileCache.fileName)
             self.allTask = fileCache.todoItems.map { $0.value }.sorted(by: { val1, val2 in
@@ -132,9 +107,11 @@ class AllTaskViewController: UITableViewController {
             let alert = Helpers.shared.addAlert(title: "Внимание", message: "Произошла ошибка")
             present(alert, animated: true, completion: nil)
         }
-        
+        print("ALL TASK\n", allTask, "\n", filteredAllTask)
         self.filteredAllTask = allTask.filter { !$0.isTaskComplete }
         if allTask.count == filteredAllTask.count { isFiltered = true }
+        if filteredAllTask.isEmpty && allTask.isEmpty { headerIsShow = true;
+            print("DELETE");tableView.tableHeaderView = nil }
     }
     
     private func configureNavigationItem() {
@@ -164,25 +141,11 @@ class AllTaskViewController: UITableViewController {
     override func viewWillDisappear(_ animated: Bool) {
         self.button.isHidden = true
     }
-//    private func configureTableView() {
-//        view.addSubview(tableView)
-//        tableView.translatesAutoresizingMaskIntoConstraints = false
-//        tableView.delegate = self
-//        tableView.dataSource = self
-//        NSLayoutConstraint.activate([
-//            tableView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
-//            tableView.heightAnchor.constraint(equalToConstant: 300),
-//            tableView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 20),
-//            tableView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: <#T##CGFloat#>)
-//        ])
-//        tableView.layer.cornerRadius = 16
-//        tableView.register(AllTaskCell.self, forCellReuseIdentifier: AllTaskCell.identifier)
-//    }
+ 
     @objc func addTask() {
         let vc = CurrentTaskViewController()
         vc.delegate = self
         let navCont = UINavigationController(rootViewController: vc)
-        print(navigationController?.modalPresentationStyle.rawValue)
         navigationController?.present(navCont, animated: true, completion: nil)
     }
 }
@@ -191,8 +154,8 @@ extension AllTaskViewController {
         return 1
     }
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        if allTask.count == 0 && filteredAllTask.count == 0 {
-            return 0
+        if allTask.isEmpty && filteredAllTask.isEmpty {
+            return 1
         }
         if isFiltered {
             return filteredAllTask.count + 1
@@ -202,6 +165,7 @@ extension AllTaskViewController {
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         var allItem = [TodoItem]()
+        
         if isFiltered {
             allItem = filteredAllTask
         } else {
@@ -214,8 +178,6 @@ extension AllTaskViewController {
             return cell
         } else {
             guard let cell = tableView.dequeueReusableCell(withIdentifier: AllTaskCell.identifier, for: indexPath) as? AllTaskCell else { return UITableViewCell() }
-
-            
             let item = allItem[indexPath.row]
             cell.fillData(task: item, currentIndexpath: indexPath.row, displayMode: displayMode, tableViewWidth: tableView.bounds.width)
             cell.delegate = self
@@ -239,25 +201,31 @@ extension AllTaskViewController {
         if indexPath.row == itemArray.count {
             let vc = CurrentTaskViewController()
             vc.delegate = self
-            navigationController?.pushViewController(vc, animated: true)
+            let navCont = UINavigationController(rootViewController: vc)
+            navigationController?.present(navCont, animated: true, completion: nil)
         } else {
             let item = itemArray[indexPath.row]
             let vc = CurrentTaskViewController()
             vc.currentItem = item
             vc.isChange = true
             vc.delegate = self
-            navigationController?.pushViewController(vc, animated: true)
+            let navCont = UINavigationController(rootViewController: vc)
+            navigationController?.present(navCont, animated: true, completion: nil)
         }
     }
-        
+    
     override func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
+        let count = allTask.filter { $0.isTaskComplete }.count
+        if count == 0 {
+            headerIsShow = true
+            return 0
+        }
         return 50
     }
     override func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
         guard let header = tableView.dequeueReusableHeaderFooterView(withIdentifier: CustomHeaderView.identifier) as? CustomHeaderView else { return nil }
         let count = allTask.filter { $0.isTaskComplete }.count
-        if count == 0 { return nil}
-        header.fillData(countTaskComplete: count, displayMode: displayMode, allTask: allTask)
+        header.fillData(countTaskComplete: count, displayMode: displayMode, allTask: allTask, headerIsShow: headerIsShow)
         header.delegate = self
         return header
     }
@@ -265,10 +233,93 @@ extension AllTaskViewController {
 //MARK: - Leading & Trailing swipe -
 extension AllTaskViewController {
     override func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
-        return nil
+       
+        var itemArray = [TodoItem]()
+        if isFiltered {
+            itemArray = filteredAllTask
+            if indexPath.row == filteredAllTask.count { return nil }
+        } else {
+            itemArray = allTask
+            if indexPath.row == allTask.count { return nil }
+        }
+        let deleteAction = UIContextualAction(style: .destructive, title: nil) { [weak self] _,_,_ in
+            guard let self = self else { return }
+            var itemId = ""
+            if self.isFiltered {
+                itemId = self.filteredAllTask[indexPath.row].id
+                self.filteredAllTask.remove(at: indexPath.row)
+                self.allTask.removeAll { $0.id == itemId }
+                self.tableView.deleteRows(at: [indexPath], with: .automatic)
+            } else {
+                itemId = self.allTask[indexPath.row].id
+                self.allTask.remove(at: indexPath.row)
+                self.filteredAllTask.removeAll { $0.id == itemId }
+                self.tableView.deleteRows(at: [indexPath], with: .automatic)
+            }
+            self.fileCache.deleteTask(id: itemId)
+            do {
+                try self.fileCache.saveToFile(FileCache.fileName)
+            } catch FileCacheError.saveError(let saveErrorMessage) {
+                let alert = Helpers.shared.addAlert(title: "Внимание", message: saveErrorMessage)
+                self.present(alert, animated: true, completion: nil)
+            } catch  {
+                let alert = Helpers.shared.addAlert(title: "Внимание", message: "Произошла ошибка")
+                self.present(alert, animated: true, completion: nil)
+            }
+            self.getData()
+            self.tableView.reloadData()
+        }
+        let infoAction = UIContextualAction(style: .normal, title: nil) { [weak self] _,_,_ in
+            guard let self = self else { return }
+            let item = itemArray[indexPath.row]
+            let vc = CurrentTaskViewController()
+            vc.currentItem = item
+            vc.isChange = true
+            vc.delegate = self
+            let navCont = UINavigationController(rootViewController: vc)
+            self.navigationController?.present(navCont, animated: true, completion: nil)
+        }
+        infoAction.backgroundColor = CustomColor(displayMode: .lightMode).grayLight
+        infoAction.image = UIImage(systemName: "info.circle")
+        deleteAction.image = UIImage(systemName: "trash")
+        let actions = UISwipeActionsConfiguration(actions: [deleteAction, infoAction])
+        return actions
     }
+    
     override func tableView(_ tableView: UITableView, leadingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
-        return nil
+        var itemArray = [TodoItem]()
+        
+        if isFiltered {
+            itemArray = filteredAllTask
+            if indexPath.row == filteredAllTask.count { return nil }
+        } else {
+            itemArray = allTask
+            if indexPath.row == allTask.count { return nil }
+        }
+        
+        let currentTask = itemArray[indexPath.row]
+        let doneAction = UIContextualAction(style: .normal, title: nil) {[weak self] _,_,_ in
+            guard let self = self else { return }
+            let isDone = true
+            let item = TodoItem(id: currentTask.id, text: currentTask.text, important: currentTask.important, deadline: currentTask.deadLine, isTaskComplete: isDone, addTaskDate: currentTask.addTaskDate, changeTaskDate: currentTask.changeTaskDate)
+            self.fileCache.deleteTask(id: item.id)
+            self.fileCache.addTask(item: item)
+            do {
+                try self.fileCache.saveToFile(FileCache.fileName)
+            } catch FileCacheError.saveError(let saveErrorMessage) {
+                let alert = Helpers.shared.addAlert(title: "Внимание", message: saveErrorMessage)
+                self.present(alert, animated: true, completion: nil)
+            } catch  {
+                let alert = Helpers.shared.addAlert(title: "Внимание", message: "Произошла ошибка")
+                self.present(alert, animated: true, completion: nil)
+            }
+            self.getData()
+            self.tableView.reloadData()
+        }
+        doneAction.image = UIImage(named: "done")
+        doneAction.backgroundColor = CustomColor(displayMode: .lightMode).green
+        let actions = UISwipeActionsConfiguration(actions: [doneAction])
+        return actions
     }
 }
 extension AllTaskViewController: Update {
@@ -292,16 +343,18 @@ extension AllTaskViewController: UpdateEclipse {
             present(alert, animated: true, completion: nil)
         }
         getData()
-        
         self.tableView.reloadData()
     }
 }
 extension AllTaskViewController: ShowAndHide {
     func show(newItem: [TodoItem]) {
+        self.headerIsShow = false
         self.isFiltered = false
         self.tableView.reloadData()
     }
+    
     func hide(newItem: [TodoItem]) {
+        self.headerIsShow = true
         self.isFiltered = true
         self.tableView.reloadData()
     }

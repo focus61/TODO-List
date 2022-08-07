@@ -163,6 +163,7 @@ extension AllTaskCell {
         labelLeadingConstraint?.isActive = true
         labelBottomConstraint = taskDescriptionLabel.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -InsetConstants.verticalInsetBetweenElements.value)
         labelBottomConstraint?.isActive = true
+        labelBottomConstraint?.priority = .defaultHigh
         taskDescriptionLabel.font = CustomFont.body
         taskDescriptionLabel.numberOfLines = 3
     }
@@ -219,7 +220,6 @@ extension AllTaskCell {
             self.deadlineText = Date.currentDateFormatForDeadline(date: deadline)
             
             if deadline.timeIntervalSince1970 < Date.now.timeIntervalSince1970 {
-                print(deadline, "&&", Date.now.endOfDay)
                 falledDeadline = true
             }
         }
@@ -248,11 +248,13 @@ extension AllTaskCell {
         self.eclipseStatus = eclipseStatus
         if !deadlineText.isEmpty {
             labelBottomConstraint?.isActive = false
+            labelBottomConstraint?.priority = .defaultHigh
             deadlineLabelConfigure(withText: deadlineText)
         } else {
             littleCalendar.removeFromSuperview()
             deadlineLabel.removeFromSuperview()
             labelBottomConstraint?.isActive = true
+            labelBottomConstraint?.priority = .defaultHigh
         }
         
         switch task.important {
