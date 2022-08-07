@@ -6,17 +6,18 @@
 //
 
 import UIKit
-
-class CurrentTaskViewController: UIViewController {
+protocol UpdateDateWithDatePicker {
+    func update(currentDate: Date)
+}
+//DOIT - Keyboard will show etc.
+final class CurrentTaskViewController: UIViewController {
     private var displayMode: DisplayMode = .lightMode
-    
-    let fileCache = FileCache()
+    private let fileCache = FileCache()
     var currentItem: TodoItem?
-    var todoItemId = ""
+    private var todoItemId = ""
     var delegate: Update?
-    var tableViewHeightConstraint: NSLayoutConstraint?
-    var tableViewWithCalendarConstraint: NSLayoutConstraint?
-    var isNewTask = true
+    private var tableViewHeightConstraint: NSLayoutConstraint?
+    private var tableViewWithCalendarConstraint: NSLayoutConstraint?
     private var cancelBarItem = UIBarButtonItem()
     private var saveBarItem = UIBarButtonItem()
     private let startHeightTextView: CGFloat = 120
@@ -29,7 +30,8 @@ class CurrentTaskViewController: UIViewController {
     private var changedDeadlineDate: Date?
     private var importantValue: Int?
     private var addTaskDate: Date?
-    lazy var text = "" {
+    var hideHeight: CGFloat = 0
+    private lazy var text = "" {
         willSet {
             if newValue == "" {
                 self.saveBarItem.isEnabled = false
@@ -46,7 +48,8 @@ class CurrentTaskViewController: UIViewController {
     private let containerView: UIView = .init(frame: .zero)
     private var containerViewHeightConstraint: NSLayoutConstraint?
     var isChange = false
-    var counter = 1
+    private var counter = 1
+    private var isShowKeyboard = false
     override func viewDidLoad() {
         super.viewDidLoad()
         configureView()
@@ -54,11 +57,34 @@ class CurrentTaskViewController: UIViewController {
             getData()
         }
         loadData()
-//        NotificationCenter.default.addObserver(self, selector: #selector(updateTextView), name: UIResponder.keyboardWillShowNotification, object: nil)
-//        NotificationCenter.default.addObserver(self, selector: #selector(updateTextView), name: UIResponder.keyboardWillHideNotification, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(updateTextView), name: UIResponder.keyboardWillShowNotification, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(updateTextView), name: UIResponder.keyboardWillHideNotification, object: nil)
     }
-   
-
+    
+    @objc func updateTextView(param: Notification) {
+        let info = param.userInfo
+        if let keyboardRect = info?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect {
+            self.heightKeyboard = keyboardRect.height
+            if (self.view.bounds.height - textView.contentSize.height - view.safeAreaInsets.top - 50) <= heightKeyboard {
+                if param.name ==  UIResponder.keyboardWillShowNotification {
+                    let keyboardSize = keyboardRect.size
+                    containerView.frame.origin.y -= keyboardRect.height
+                } else {
+                    if hideHeight == 0 {
+                        containerView.frame.origin.y += keyboardRect.height
+                    } else {
+                        containerView.frame.origin.y += hideHeight
+                    }
+                }
+            }
+        }
+    }
+    
+    deinit {
+        NotificationCenter.default.removeObserver(self, name: UIResponder.keyboardWillShowNotification, object: nil)
+        NotificationCenter.default.removeObserver(self, name: UIResponder.keyboardWillHideNotification, object: nil)
+    }
+    
     private func configureView() {
         navigationItemConfigure()
         scrollViewConfigure()
@@ -66,6 +92,7 @@ class CurrentTaskViewController: UIViewController {
         tableViewConfigure()
         deleteButtonConfigure()
     }
+    
     private func scrollViewConfigure() {
         view.addSubview(scrollView)
         scrollView.addSubview(containerView)
@@ -77,12 +104,12 @@ class CurrentTaskViewController: UIViewController {
             scrollView.rightAnchor.constraint(equalTo: view.rightAnchor),
             scrollView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
             scrollView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
-        
+            
             containerView.leftAnchor.constraint(equalTo: scrollView.leftAnchor),
             containerView.topAnchor.constraint(equalTo: scrollView.topAnchor),
             containerView.widthAnchor.constraint(equalToConstant: self.view.bounds.width)
         ])
-        containerViewHeightConstraint =             containerView.heightAnchor.constraint(equalToConstant: self.view.bounds.height)
+        containerViewHeightConstraint = containerView.heightAnchor.constraint(equalToConstant: self.view.bounds.height)
         containerViewHeightConstraint?.isActive = true
         scrollView.isUserInteractionEnabled = true
         containerView.isUserInteractionEnabled = true
@@ -94,6 +121,7 @@ class CurrentTaskViewController: UIViewController {
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
         counter = 1
     }
+    
     private func textViewConfigure() {
         containerView.addSubview(textView)
         textView.translatesAutoresizingMaskIntoConstraints = false
@@ -101,9 +129,9 @@ class CurrentTaskViewController: UIViewController {
             textView.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 20),
             textView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -20),
             textView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 20),
-            textView.heightAnchor.constraint(equalToConstant: startHeightTextView)
         ])
-//        textView.contentSize.height = currentHeight
+        textViewHeight = textView.heightAnchor.constraint(equalToConstant: startHeightTextView)
+        textViewHeight?.isActive = true
         textView.font = CustomFont.body
         textView.text = "Что надо сделать?"
         textView.layer.cornerRadius = 16
@@ -120,7 +148,6 @@ class CurrentTaskViewController: UIViewController {
             tableView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -20),
             tableView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 20)
         ])
-        
         tableViewHeightConstraint = tableView.heightAnchor.constraint(equalToConstant: 112)
         tableViewHeightConstraint?.isActive = true
         tableViewWithCalendarConstraint = tableView.heightAnchor.constraint(equalToConstant: 112 + calendarHeight)
@@ -129,7 +156,7 @@ class CurrentTaskViewController: UIViewController {
         tableView.dataSource = self
     }
 
-    func deleteButtonConfigure() {
+    private func deleteButtonConfigure() {
         containerView.addSubview(deleteButton)
         if text.isEmpty { deleteButton.isEnabled = false }
         deleteButton.translatesAutoresizingMaskIntoConstraints = false
@@ -144,16 +171,17 @@ class CurrentTaskViewController: UIViewController {
         deleteButton.layer.cornerRadius = 16
         deleteButton.addTarget(self, action: #selector(deleteTask), for: .touchUpInside)
     }
+    
     private func navigationItemConfigure() {
         title = "Дело"
         navigationItem.largeTitleDisplayMode = .never
         cancelBarItem = UIBarButtonItem(title: "Отменить", style: .done, target: self, action: #selector(cancelTarget))
         navigationItem.leftBarButtonItem = cancelBarItem
-        
         saveBarItem = UIBarButtonItem(title: "Сохранить", style: .done, target: self, action: #selector(saveTask))
         navigationItem.rightBarButtonItem = saveBarItem
         saveBarItem.isEnabled = false
     }
+    
     private func loadData() {
         do {
             try fileCache.loadFromFile(FileCache.fileName)
@@ -166,8 +194,8 @@ class CurrentTaskViewController: UIViewController {
             let alert = Helpers.shared.addAlert(title: "Внимание", message: "Произошла ошибка")
             present(alert, animated: true, completion: nil)
         }
-        
     }
+    
     private func getData() {
         guard let item = currentItem else { return }
         self.todoItemId = item.id
@@ -186,14 +214,12 @@ class CurrentTaskViewController: UIViewController {
         let size = CGSize(width: view.frame.width, height: .infinity)
         let estimatedSize = textView.sizeThatFits(size)
         if estimatedSize.height > startHeightTextView {
-            textView.constraints.forEach { constraint in
-                if constraint.firstAttribute == .height {
-                    constraint.constant = estimatedSize.height
-                }
-            }
+            textViewHeight?.isActive = false
+            textViewHeight?.constant = estimatedSize.height
+            textViewHeight?.isActive = true
         }
-        
     }
+    
     @objc private func saveTask() {
         let itemText = self.text
         var itemImportant: ImportantType = .basic
@@ -300,42 +326,43 @@ extension CurrentTaskViewController: UITextViewDelegate {
             guard let text = textView.text else {return}
             self.text = text
             let size = CGSize(width: view.frame.width, height: .infinity)
+            let textFrameSize = textView.frame.size
             let estimatedSize = textView.sizeThatFits(size)
-            
             if estimatedSize.height >= startHeightTextView {
-                textView.constraints.forEach { constraint in
-                    if constraint.firstAttribute == .height {
-                        constraint.constant = estimatedSize.height
-                    }
+                textViewHeight?.isActive = false
+                textViewHeight?.constant = estimatedSize.height
+                textViewHeight?.isActive = true
+                if (self.view.bounds.height - textView.contentSize.height - view.safeAreaInsets.top - 50) <= heightKeyboard {
+                    let heightSize = estimatedSize.height - textFrameSize.height
+                    hideHeight += heightSize
+                    containerView.frame.origin.y -= heightSize
+                    scrollView.contentSize.height += heightSize
+                    containerViewHeightConstraint?.isActive = false
+                    containerViewHeightConstraint?.constant = scrollView.contentSize.height
+                    containerViewHeightConstraint?.isActive = true
                 }
-                dynamicConstraintsForScrollView()
-            }
-            
-        }
-        if (self.view.bounds.height - textView.contentSize.height - view.safeAreaInsets.top - 50) <= self.heightKeyboard {
-//            KEYBOARD MOVE
-        }
-    }
-    func dynamicConstraintsForScrollView() {
-        let size = CGSize(width: view.frame.width, height: .infinity)
-        let scrollSize = scrollView.sizeThatFits(size)
-        scrollView.constraints.forEach { constraint in
-            if constraint.firstAttribute == .height {
-                constraint.constant = scrollSize.height
-            }
-        }
-        
-        containerView.constraints.forEach { constraint in
-            if constraint.firstAttribute == .height {
-                constraint.constant = scrollView.contentSize.height
+                
+                if deleteButton.frame.origin.y >= view.frame.height - deleteButton.frame.size.height - 20 {
+                    let heightSize = estimatedSize.height - textFrameSize.height
+                    scrollView.contentSize.height += heightSize
+                    containerViewHeightConstraint?.isActive = false
+                    containerViewHeightConstraint?.constant = scrollView.contentSize.height
+                    containerViewHeightConstraint?.isActive = true
+                } 
+                view.layoutIfNeeded()
             }
         }
     }
+    
     func textViewDidBeginEditing(_ textView: UITextView) {
         if !isChange && textView.textColor == CustomColor(displayMode: displayMode).labelTertiary {
             self.textView.text = nil
             isChange = true
         }
+        if (self.view.bounds.height - textView.contentSize.height - view.safeAreaInsets.top - 50) <= heightKeyboard {
+            
+        }
+        
     }
 }
 //MARK: - TableView Config
@@ -370,13 +397,9 @@ extension CurrentTaskViewController: UITableViewDelegate, UITableViewDataSource 
         }
         if !calendarIsOff {
             guard let cell = tableView.dequeueReusableCell(withIdentifier: CalendarCell.identifier, for: indexPath) as? CalendarCell else {return UITableViewCell()}
-            cell.datePicker.addTarget(self, action: #selector(getDateFromCalendar(sender:)), for: .valueChanged)
-            if let changedDate = changedDeadlineDate {
-                cell.datePicker.date = changedDate
-            } else {
-                cell.datePicker.date = Date.now
-            }
-            cell.fillData(displayMode: displayMode)
+            
+            cell.delegate = self
+            cell.fillData(displayMode: displayMode, changedDeadlineDate: changedDeadlineDate ?? Date.now)
             return cell
         }
         return UITableViewCell()
@@ -390,82 +413,52 @@ extension CurrentTaskViewController: UITableViewDelegate, UITableViewDataSource 
     }
     
 //  MARK: - Table view Action/Target
-    @objc func segmentImportantTarget(sender: UISegmentedControl) {
+    @objc private func segmentImportantTarget(sender: UISegmentedControl) {
         self.importantValue = sender.selectedSegmentIndex
     }
-    @objc func getDateFromCalendar(sender: UIDatePicker) {
-        let timeFormatter = DateFormatter()
-        timeFormatter.timeStyle = DateFormatter.Style.short
-        self.changedDeadlineDate = sender.date
-        self.tableView.reloadData()
-    }
-    @objc func addCalendarForDeadline() {
+    
+    @objc private func addCalendarForDeadline() {
+        containerViewHeightConstraint?.isActive = false
          if calendarIsOff {
-             UIView.animate(withDuration: 0.5) { [weak self] in
+             UIView.animate(withDuration: 0.4) { [weak self] in
                  guard let self = self else {return}
                  self.tableViewHeightConstraint?.isActive = false
                  self.tableViewWithCalendarConstraint?.isActive = true
                  self.view.layoutIfNeeded()
              }
              scrollView.contentSize.height += calendarHeight
-             scrollView.constraints.forEach { constraint in
-                 if constraint.firstAttribute == .height {
-                     constraint.constant += calendarHeight
-                 }
-             }
-             
-             containerView.constraints.forEach { constraint in
-                 if constraint.firstAttribute == .height {
-                     constraint.constant += calendarHeight
-                 }
-             }
+             containerViewHeightConstraint?.constant += calendarHeight
          } else {
-             UIView.animate(withDuration: 0.5) { [weak self] in
+             UIView.animate(withDuration: 0.4) { [weak self] in
                  guard let self = self else {return}
                  self.tableViewWithCalendarConstraint?.isActive = false
                  self.tableViewHeightConstraint?.isActive = true
                  self.view.layoutIfNeeded()
              }
-             
              scrollView.contentSize.height -= calendarHeight
-             scrollView.constraints.forEach { constraint in
-                 if constraint.firstAttribute == .height {
-                     constraint.constant -= calendarHeight
-                 }
-             }
-             containerView.constraints.forEach { constraint in
-                 if constraint.firstAttribute == .height {
-                     constraint.constant -= calendarHeight
-                 }
-             }
+             containerViewHeightConstraint?.constant -= calendarHeight
          }
+        containerViewHeightConstraint?.isActive = true
         view.layoutIfNeeded()
         calendarIsOff.toggle()
         tableView.reloadData()
     }
-    @objc func changeSwitchValue() {
+    
+    @objc private func changeSwitchValue() {
         deadlineIsOff.toggle()
         if deadlineIsOff && !calendarIsOff {
+            containerViewHeightConstraint?.isActive = false
             calendarIsOff.toggle()
             changedDeadlineDate = nil
-            UIView.animate(withDuration: 0.5) { [weak self] in
+            UIView.animate(withDuration: 0.4) { [weak self] in
                 guard let self = self else {return}
                 self.tableViewWithCalendarConstraint?.isActive = false
                 self.tableViewHeightConstraint?.isActive = true
                 self.view.layoutIfNeeded()
             }
             scrollView.contentSize.height -= calendarHeight
-            scrollView.constraints.forEach { constraint in
-                if constraint.firstAttribute == .height {
-                    constraint.constant -= calendarHeight
-                }
-            }
-            
-            containerView.constraints.forEach { constraint in
-                if constraint.firstAttribute == .height {
-                    constraint.constant -= calendarHeight
-                }
-            }
+            containerViewHeightConstraint?.constant -= calendarHeight
+            containerViewHeightConstraint?.isActive = true
         }
         if calendarIsOff && deadlineIsOff {
             changedDeadlineDate = nil
@@ -474,24 +467,10 @@ extension CurrentTaskViewController: UITableViewDelegate, UITableViewDataSource 
         tableView.reloadData()
     }
 }
-extension CurrentTaskViewController {
-    /* MARK: - Keyboard move
-    @objc func updateTextView(param: Notification) {
-        guard let userInfo = param.userInfo,
-              let getKeyboardRect = (userInfo[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue)?.cgRectValue
-        else {return}
-        let keyboardFrame = view.convert(getKeyboardRect, to: view.window)
-        if param.name ==  UIResponder.keyboardWillShowNotification {
-            textView.contentInset = UIEdgeInsets.zero
-        } else {
-            textView.contentInset = UIEdgeInsets(top: 0, left: 0, bottom: keyboardFrame.height, right: 0)
-        }
-        self.heightKeyboard = getKeyboardRect.size.height
-    }
-    @objc func keyboardWillShow(_ notification:NSNotification) {
-    }
 
-    @objc func keyboardWillHide(_ notification:NSNotification) {
+extension CurrentTaskViewController: UpdateDateWithDatePicker {
+    func update(currentDate: Date) {
+        self.changedDeadlineDate = currentDate
+        self.tableView.reloadData()
     }
-     */
 }

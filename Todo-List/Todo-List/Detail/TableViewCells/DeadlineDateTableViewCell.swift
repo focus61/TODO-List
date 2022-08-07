@@ -17,10 +17,12 @@ final class DeadlineDateTableViewCell: UITableViewCell {
     private var constrainsButton: [NSLayoutConstraint] = []
     private var currentDateString = ""
     private var calendarIsOff = false
+    
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: ImportantTableViewCell.identifier)
         viewConfigure()
     }
+    
     func fillData(displayMode: DisplayMode, deadlineIsOff: Bool, deadlineDate: Date, calendarIsOff: Bool) {
         if !deadlineIsOff {
             deadlineSwitch.isOn = true
@@ -45,19 +47,19 @@ final class DeadlineDateTableViewCell: UITableViewCell {
         } else {
             separatorInset = UIEdgeInsets(top: 0, left: 10, bottom: 0, right: 10)
         }
-
+        deadlineSwitch.backgroundColor = CustomColor(displayMode: displayMode).backPrimary
+        deadlineSwitch.layer.cornerRadius = 16.0
     }
+    
     private func viewConfigure() {
         labelConfigure()
         changeDeadlineButtonConfigure(deadlineIsOff: deadlineIsOff)
         switchConfigure()
         selectionStyle = .none
-
     }
+    
     private func labelConstraintsConfigure(deadlineIsOff: Bool) {
-        for i in constrainsLabel {
-            i.isActive = false
-        }
+        NSLayoutConstraint.deactivate(constrainsLabel)
         if deadlineIsOff {
             constrainsLabel = [
                 deadlineLabel.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
@@ -72,15 +74,15 @@ final class DeadlineDateTableViewCell: UITableViewCell {
                 deadlineLabel.widthAnchor.constraint(equalToConstant: 100)
             ]
         }
-        for i in constrainsLabel {
-            i.isActive = true
-        }
+        NSLayoutConstraint.activate(constrainsLabel)
     }
+    
     private func labelConfigure() {
         contentView.addSubview(deadlineLabel)
         deadlineLabel.translatesAutoresizingMaskIntoConstraints = false
         deadlineLabel.text = "Сделать до"
     }
+    
     private func switchConfigure() {
         contentView.addSubview(deadlineSwitch)
         deadlineSwitch.translatesAutoresizingMaskIntoConstraints = false
@@ -89,6 +91,7 @@ final class DeadlineDateTableViewCell: UITableViewCell {
             deadlineSwitch.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -10)
         ])
     }
+    
     private func changeDeadlineButtonConfigure(deadlineIsOff: Bool) {
         if !deadlineIsOff {
             contentView.addSubview(changeDeadlineButton)
@@ -106,8 +109,8 @@ final class DeadlineDateTableViewCell: UITableViewCell {
         } else {
             changeDeadlineButton.removeFromSuperview()
         }
-        
     }
+    
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }

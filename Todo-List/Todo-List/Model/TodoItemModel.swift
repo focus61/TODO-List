@@ -20,7 +20,6 @@ struct TodoItem {
     let isTaskComplete: Bool
     let addTaskDate: Date
     let changeTaskDate: Date?
-    
     init(id: String = UUID().uuidString,
          text: String,
          important: ImportantType = .basic,
@@ -97,7 +96,6 @@ extension TodoItem {
             case .basic:
                 break
         }
-        
         if let changeTaskDate = changeTaskDate {
             object["changeTaskDate"] = changeTaskDate.timeIntervalSince1970
         }

@@ -21,9 +21,6 @@ final class CustomHeaderView: UITableViewHeaderFooterView {
         countTaskLabelConfigure()
         showHideButtonConfigure()
     }
-    deinit{
-        print("Deinit")
-    }
     
     override func layoutSubviews() {
         super.layoutSubviews()

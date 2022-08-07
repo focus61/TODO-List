@@ -6,7 +6,7 @@
 //
 
 import UIKit
-class Helpers {
+final class Helpers {
     static let shared = Helpers()
     func addAlert(title: String, message: String) -> UIAlertController {
         let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)

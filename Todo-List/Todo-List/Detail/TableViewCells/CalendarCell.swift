@@ -8,15 +8,18 @@
 import UIKit
 final class CalendarCell: UITableViewCell {
     static let identifier = "CalendarCell"
-    let datePicker = UIDatePicker()
+    private let datePicker = UIDatePicker()
+    private var changedDeadlineDate: Date?
+    var delegate: UpdateDateWithDatePicker?
     private var displayMode: DisplayMode = .lightMode
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: CalendarCell.identifier)
         datePickerConfigure()
     }
-    func fillData(displayMode: DisplayMode) {
+    func fillData(displayMode: DisplayMode, changedDeadlineDate: Date) {
         self.displayMode = displayMode
         datePicker.minimumDate = Date.now
+        self.changedDeadlineDate = changedDeadlineDate
     }
     override func layoutSubviews() {
         super.layoutSubviews()
@@ -36,6 +39,14 @@ final class CalendarCell: UITableViewCell {
         datePicker.locale = Locale(identifier: "ru_RU")
         datePicker.datePickerMode = .date
         datePicker.preferredDatePickerStyle = .inline
+        datePicker.isUserInteractionEnabled = true
+        datePicker.addTarget(self, action: #selector(getDateFromCalendar(sender:)), for: .valueChanged)
+    }
+    
+    @objc func getDateFromCalendar(sender: UIDatePicker) {
+        let timeFormatter = DateFormatter()
+        timeFormatter.timeStyle = DateFormatter.Style.short
+        delegate?.update(currentDate: sender.date)
     }
 
     required init?(coder: NSCoder) {

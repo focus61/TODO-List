@@ -11,30 +11,30 @@ final class ImportantTableViewCell: UITableViewCell {
     private let importantLabel: UILabel = .init(frame: .zero)
     let importantSegmentControl: UISegmentedControl = .init(frame: .zero)
     private var displayMode: DisplayMode = .lightMode
-    
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: ImportantTableViewCell.identifier)
         viewConfigure()
     }
+    
     func fillData(displayMode: DisplayMode, segmentedValue: Int) {
         self.displayMode = displayMode
         self.importantSegmentControl.selectedSegmentIndex = segmentedValue
         
     }
+    
     override func layoutSubviews() {
         super.layoutSubviews()
         contentView.backgroundColor = CustomColor(displayMode: displayMode).backSecondary
         importantLabel.textColor = CustomColor(displayMode: displayMode).labelPrimary
-        importantSegmentControl.backgroundColor = CustomColor(displayMode: displayMode).supportOverlay
     }
+    
     private func viewConfigure() {
         labelConfigure()
         importantSegmentControlConfigure()
-        
         selectionStyle = .none
         separatorInset = UIEdgeInsets(top: 0, left: 10, bottom: 0, right: 10)
-
     }
+    
     private func labelConfigure() {
         contentView.addSubview(importantLabel)
         importantLabel.translatesAutoresizingMaskIntoConstraints = false
@@ -51,18 +51,12 @@ final class ImportantTableViewCell: UITableViewCell {
         importantSegmentControl.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
             importantSegmentControl.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
-            importantSegmentControl.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -10),
-            importantSegmentControl.leadingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -160)
+            importantSegmentControl.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -10)
         ])
-        var uninportantImage = UIImage(named: "unimportantImage")?.withRenderingMode(.alwaysTemplate)
-        let uninportantImageColor = CustomColor(displayMode: displayMode).gray
-        uninportantImage = uninportantImage?.withTintColor(uninportantImageColor)
-        var importantImage = UIImage(named: "importantImage")?.withRenderingMode(.alwaysTemplate)
-        let importantImageColor = CustomColor(displayMode: displayMode).red
-        importantImage = importantImage?.withTintColor(importantImageColor)
-        importantSegmentControl.insertSegment(with: uninportantImage, at: 0, animated: false)
-        importantSegmentControl.insertSegment(withTitle: "нет", at: 1, animated: false)
-        importantSegmentControl.insertSegment(with: importantImage, at: 2, animated: false)
+        let uninportantImage = UIImage(named: "unimportantImage")
+        importantSegmentControl.insertSegment(with: uninportantImage, at: 0, animated: true)
+        importantSegmentControl.insertSegment(withTitle: "нет", at: 1, animated: true)
+        importantSegmentControl.insertSegment(withTitle: "‼️", at: 2, animated: true)
     }
     
     required init?(coder: NSCoder) {

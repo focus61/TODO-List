@@ -6,6 +6,7 @@
 //
 
 import UIKit
+
 protocol Update {
     func updateDate()
 }
@@ -17,7 +18,8 @@ protocol UpdateEclipse {
     func updateEclipse(item: TodoItem)
 }
 
-class AllTaskViewController: UITableViewController {
+// TODO: - Доделать ориентацию детального экрана
+final class AllTaskViewController: UITableViewController {
     private var allTask = [TodoItem]()
     private var filteredAllTask = [TodoItem]()
     private var isFiltered = true
@@ -30,12 +32,12 @@ class AllTaskViewController: UITableViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        view.addSubview(button)
         configure()
         getData()
         NotificationCenter.default.addObserver(self, selector: #selector(changeOrientation), name: UIDevice.orientationDidChangeNotification, object: nil)
         self.navigationController?.view.addSubview(button)
     }
+    
     deinit {
         NotificationCenter.default.removeObserver(self, name: UIDevice.orientationDidChangeNotification, object: nil)
     }
@@ -70,7 +72,7 @@ class AllTaskViewController: UITableViewController {
         if UIDevice.current.orientation.isLandscape {
             button.frame.origin = CGPoint(x: view.center.x - 25, y: view.frame.height - 100)
             button.frame.size = buttonSize
-        } else {
+        } else if UIDevice.current.orientation.isPortrait  {
             button.frame.origin = CGPoint(x: view.center.x - 25, y: view.frame.height - 100)
             button.frame.size = buttonSize
         }
@@ -83,6 +85,7 @@ class AllTaskViewController: UITableViewController {
     }
     private func buttonConfigure() {
         let image = UIImage(named: "Union")
+        self.navigationController?.view.addSubview(button)
         button.setImage(image, for: .normal)
         button.addTarget(self, action: #selector(addTask), for: .touchUpInside)
     }
@@ -108,7 +111,6 @@ class AllTaskViewController: UITableViewController {
     }
     
     private func getData() {
-        print("Get data")
         do {
             try fileCache.loadFromFile(FileCache.fileName)
             self.allTask = fileCache.todoItems.map { $0.value }.sorted(by: { val1, val2 in
@@ -411,10 +413,3 @@ extension AllTaskViewController: ShowAndHide {
         self.tableView.reloadData()
     }
 }
-
-
-
-
-
-
-

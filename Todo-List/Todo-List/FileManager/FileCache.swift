@@ -6,14 +6,13 @@
 //
 
 import Foundation
-//Сделать поправки в др файлах где идет вызов функций
+
 enum FileCacheError: Error {
     case loadError(String)
     case saveError(String)
 }
 final class FileCache {
     static let fileName = "JSON"
-
     private(set) var todoItems: [String : TodoItem]
     init(todoItems: [String : TodoItem] = [:]) {
         self.todoItems = todoItems
