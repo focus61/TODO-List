@@ -11,7 +11,7 @@ final class CustomHeaderView: UITableViewHeaderFooterView {
     static let identifier = "CustomHeaderView"
     private let countTaskLabel = UILabel()
     var delegate: ShowAndHide?
-    private let showHideButton = UIButton(type: .system)
+    private let showHideButton = UIButton()
     private var displayMode: DisplayMode = .lightMode
     private var isShow = true
     private var allTask = [TodoItem]()
@@ -59,8 +59,7 @@ final class CustomHeaderView: UITableViewHeaderFooterView {
     }
     
     @objc private func showHide() {
-        isShow.toggle()
-        if !isShow {
+        if isShow {
             showHideButton.setTitle("Скрыть", for: .normal)
             delegate?.show(newItem: allTask)
         } else {
@@ -68,6 +67,7 @@ final class CustomHeaderView: UITableViewHeaderFooterView {
             showHideButton.setTitle("Показать", for: .normal)
             delegate?.hide(newItem: newArray)
         }
+        isShow.toggle()
     }
     
     required init?(coder: NSCoder) {
@@ -76,15 +76,21 @@ final class CustomHeaderView: UITableViewHeaderFooterView {
 }
 
 extension CustomHeaderView {
-    func fillData(countTaskComplete: Int, displayMode: DisplayMode, allTask: [TodoItem], headerIsShow: Bool) {
-        countTaskLabel.text = "Выполнено - \(countTaskComplete)"
-        self.allTask = allTask
-        self.displayMode = displayMode
-        self.isShow = headerIsShow
-        if headerIsShow {
+    func fillData(countTaskComplete: Int, displayMode: DisplayMode, allTask: [TodoItem], isShowButton: Bool) {
+        if isShowButton {
             showHideButton.setTitle("Показать", for: .normal)
         } else {
             showHideButton.setTitle("Скрыть", for: .normal)
         }
+        isShow = isShowButton
+        countTaskLabel.text = "Выполнено - \(countTaskComplete)"
+        self.allTask = allTask
+        self.displayMode = displayMode
+//        self.isShow = headerIsShow
+//        if headerIsShow {
+//            showHideButton.setTitle("Показать", for: .normal)
+//        } else {
+//            showHideButton.setTitle("Скрыть", for: .normal)
+//        }
     }
 }
