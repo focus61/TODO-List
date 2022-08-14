@@ -6,27 +6,30 @@
 //
 
 import UIKit
+protocol ShowAndHideDoneTasksDelegate {
+    func show(newItem: [TodoItem])
+    func hide(newItem: [TodoItem])
+}
 
 final class CustomHeaderView: UITableViewHeaderFooterView {
     static let identifier = "CustomHeaderView"
     private let countTaskLabel = UILabel()
-    var delegate: ShowAndHide?
+    var delegate: ShowAndHideDoneTasksDelegate?
     private let showHideButton = UIButton()
-    private var displayMode: DisplayMode = .lightMode
     private var isShow = true
     private var allTask = [TodoItem]()
-    
+    private let showHideButtonWidth: CGFloat = 100
     override init(reuseIdentifier: String?) {
         super.init(reuseIdentifier: CustomHeaderView.identifier)
         countTaskLabelConfigure()
         showHideButtonConfigure()
-    }
-    
-    override func layoutSubviews() {
-        super.layoutSubviews()
-        let color = CustomColor(displayMode: displayMode).blue
+        let color = UIColor(dynamicProvider: { trait in
+            return CustomColor(trait: trait).blue
+        })
         showHideButton.setTitleColor(color, for: .normal)
-        countTaskLabel.textColor = CustomColor(displayMode: displayMode).labelTertiary
+        countTaskLabel.textColor = UIColor(dynamicProvider: { trait in
+            return CustomColor(trait: trait).labelTertiary
+        })
     }
     
     private func countTaskLabelConfigure() {
@@ -42,13 +45,11 @@ final class CustomHeaderView: UITableViewHeaderFooterView {
     private func showHideButtonConfigure() {
         contentView.addSubview(showHideButton)
         showHideButton.setTitle("Показать", for: .normal)
-        showHideButton.setTitleColor(.blue, for: .normal)
-        showHideButton.setTitleColor(.gray, for: .highlighted)
         showHideButton.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
             showHideButton.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
             showHideButton.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -WindowInsetConstants.trailing.value),
-            showHideButton.widthAnchor.constraint(equalToConstant: 100)
+            showHideButton.widthAnchor.constraint(equalToConstant: showHideButtonWidth)
         ])
         showHideButton.contentVerticalAlignment = .center
         showHideButton.contentHorizontalAlignment = .right
@@ -57,11 +58,9 @@ final class CustomHeaderView: UITableViewHeaderFooterView {
     
     @objc private func showHide() {
         if isShow {
-            showHideButton.setTitle("Скрыть", for: .normal)
             delegate?.show(newItem: allTask)
         } else {
             let newArray = allTask.filter { $0.isTaskComplete == false }
-            showHideButton.setTitle("Показать", for: .normal)
             delegate?.hide(newItem: newArray)
         }
         isShow.toggle()
@@ -73,7 +72,7 @@ final class CustomHeaderView: UITableViewHeaderFooterView {
 }
 
 extension CustomHeaderView {
-    func fillData(countTaskComplete: Int, displayMode: DisplayMode, allTask: [TodoItem], isShowButton: Bool) {
+    func fillData(countTaskComplete: Int, allTask: [TodoItem], isShowButton: Bool) {
         if isShowButton {
             showHideButton.setTitle("Показать", for: .normal)
         } else {
@@ -82,12 +81,5 @@ extension CustomHeaderView {
         isShow = isShowButton
         countTaskLabel.text = "Выполнено - \(countTaskComplete)"
         self.allTask = allTask
-        self.displayMode = displayMode
-//        self.isShow = headerIsShow
-//        if headerIsShow {
-//            showHideButton.setTitle("Показать", for: .normal)
-//        } else {
-//            showHideButton.setTitle("Скрыть", for: .normal)
-//        }
     }
 }

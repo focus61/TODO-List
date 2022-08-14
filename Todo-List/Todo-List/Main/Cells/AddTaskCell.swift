@@ -11,23 +11,32 @@ final class AddTaskCell: UITableViewCell {
     private let newTaskLabel = UILabel()
     static let identifier = "AddTaskCell"
     private let leftInsetSizeButton: CGFloat = 24
-    private var displayMode: DisplayMode = .lightMode
+    lazy var leftInset = InsetConstants.horizontalInsetBetweenElements.value + WindowInsetConstants.leading.value + leftInsetSizeButton
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: AddTaskCell.identifier)
         labelConfigure()
+        colorsConfigure()
     }
     
     override func layoutSubviews() {
         super.layoutSubviews()
-        backgroundColor = CustomColor(displayMode: displayMode).backSecondary
-        contentView.backgroundColor = CustomColor(displayMode: displayMode).backSecondary
-        newTaskLabel.textColor = CustomColor(displayMode: displayMode).supportSeparator
     }
     
+    private func colorsConfigure() {
+        backgroundColor = UIColor(dynamicProvider: { trait in
+            return CustomColor(trait: trait).backSecondary
+        })
+        contentView.backgroundColor = UIColor(dynamicProvider: { trait in
+            return CustomColor(trait: trait).backSecondary
+        })
+        newTaskLabel.textColor = UIColor(dynamicProvider: { trait in
+            return CustomColor(trait: trait).supportSeparator
+        })
+    }
     private func labelConfigure() {
         contentView.addSubview(newTaskLabel)
         newTaskLabel.translatesAutoresizingMaskIntoConstraints = false
-        let leftInset = InsetConstants.horizontalInsetBetweenElements.value + WindowInsetConstants.leading.value + leftInsetSizeButton
+        
         NSLayoutConstraint.activate([
             newTaskLabel.topAnchor.constraint(equalTo: contentView.topAnchor, constant: InsetConstants.verticalInsetBetweenElements.value),
             newTaskLabel.trailingAnchor.constraint(equalTo: contentView.centerXAnchor),
@@ -38,8 +47,7 @@ final class AddTaskCell: UITableViewCell {
         newTaskLabel.font = CustomFont.body
     }
     
-    func fillData(displayMode: DisplayMode) {
-        self.displayMode = displayMode
+    func fillData() {
     }
     
     required init?(coder: NSCoder) {

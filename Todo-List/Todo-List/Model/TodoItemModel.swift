@@ -12,6 +12,7 @@ enum ImportantType {
     case basic
     case important
 }
+
 struct TodoItem {
     let id: String
     let text: String
@@ -104,5 +105,11 @@ extension TodoItem {
             object["deadline"] = deadLine.timeIntervalSince1970
         }
         return object
+    }
+}
+
+extension TodoItem {
+    func withComplete(_ isDone: Bool) -> TodoItem {
+        return TodoItem(id: id, text: text, important: important, deadline: deadLine, isTaskComplete: isDone, addTaskDate: addTaskDate, changeTaskDate: changeTaskDate)
     }
 }

@@ -8,15 +8,19 @@
 import UIKit
 
 final class CustomColor {
-    var displayMode: DisplayMode
-    init(displayMode: DisplayMode = .lightMode) {
-        self.displayMode = displayMode
+    private var trait: UITraitCollection
+    init(trait: UITraitCollection) {
+        self.trait = trait
     }
     func switchedMode(lightColorRGB: UIColor, darkColorRGB: UIColor) -> UIColor {
-        switch displayMode {
-        case .darkMode:
+        switch trait.userInterfaceStyle {
+        case .dark:
             return darkColorRGB
-        case .lightMode:
+        case .light:
+            return lightColorRGB
+        case .unspecified:
+            return lightColorRGB
+        @unknown default:
             return lightColorRGB
         }
     }

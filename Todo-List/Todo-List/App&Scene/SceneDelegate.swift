@@ -19,15 +19,13 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         guard let windowScene = (scene as? UIWindowScene) else { return }
         window = UIWindow(frame: windowScene.coordinateSpace.bounds)
         window?.windowScene = windowScene
-        let rootViewController = AllTaskViewController(style: .insetGrouped)
+        let rootViewController = AllTaskTableViewController(style: .insetGrouped)
 //        let rootViewController = CurrentTaskViewController()
         let navigationController = UINavigationController(rootViewController: rootViewController)
         navigationController.modalPresentationStyle = .formSheet
         window?.rootViewController = navigationController
-        let light = CustomColor(displayMode: .lightMode).backPrimary
-        let dark = CustomColor(displayMode: .darkMode).backPrimary
         let color = UIColor { trait in
-            return trait.userInterfaceStyle == .dark ? dark : light
+            return CustomColor(trait: trait).backPrimary
         }
         window?.backgroundColor = color
         window?.makeKeyAndVisible()

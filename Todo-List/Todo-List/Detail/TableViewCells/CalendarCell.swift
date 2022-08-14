@@ -6,27 +6,31 @@
 //
 
 import UIKit
+
+protocol UpdateDateWithDatePickerDelegate {
+    func update(currentDate: Date)
+}
+
 final class CalendarCell: UITableViewCell {
     static let identifier = "CalendarCell"
     private let datePicker = UIDatePicker()
     private var changedDeadlineDate: Date?
-    var delegate: UpdateDateWithDatePicker?
-    private var displayMode: DisplayMode = .lightMode
+    var delegate: UpdateDateWithDatePickerDelegate?
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: CalendarCell.identifier)
         datePickerConfigure()
+        datePicker.backgroundColor = UIColor(dynamicProvider: { trait in
+            return CustomColor(trait: trait).backSecondary
+        })
     }
-    func fillData(displayMode: DisplayMode, changedDeadlineDate: Date) {
-        self.displayMode = displayMode
+    func fillData(changedDeadlineDate: Date) {
         datePicker.minimumDate = Date.now
         self.changedDeadlineDate = changedDeadlineDate
     }
     override func layoutSubviews() {
         super.layoutSubviews()
-        datePicker.backgroundColor = CustomColor(displayMode: displayMode).backSecondary
     }
     private func datePickerConfigure() {
-        datePicker.backgroundColor = .red
         contentView.addSubview(datePicker)
         separatorInset = UIEdgeInsets(top: 0, left: 0, bottom: 0, right: UIScreen.main.bounds.width)
         datePicker.translatesAutoresizingMaskIntoConstraints = false

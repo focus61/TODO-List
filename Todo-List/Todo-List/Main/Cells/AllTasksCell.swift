@@ -7,7 +7,7 @@
 
 import UIKit
 
-enum EclipseStatus {
+enum CurrentTaskStatus {
     case done
     case normal
     case falledDeadline
@@ -25,37 +25,45 @@ enum InsetConstants {
         }
     }
 }
+protocol UpdateEclipseStatusDelegate {
+    func updateEclipse(item: TodoItem)
+}
 
 final class AllTaskCell: UITableViewCell {
     static let identifier = "AllTaskCell"
-    private let taskDescriptionLabel =  UILabel()
-    private let eclipse = UIButton()
-    private let shevronImageView = UIImageView()
-    private let deadlineLabel = UILabel()
+    private let taskDescriptionLabel: UILabel = .init(frame: .zero)
+    private let taskStatusButton: UIButton = .init(frame: .zero)
+    private let shevronImageView: UIImageView = .init(frame: .zero)
+    private let deadlineLabel: UILabel = .init(frame: .zero)
+    private let horizontalStackViewImageImportantAndLabel: UIStackView = .init(frame: .zero)
+    private let verticalStackViewImageDeadlineAndLabel: UIStackView = .init(frame: .zero)
+    private let importantImageView: UIImageView = .init(frame: .zero)
     private var isDone = false
-    private var eclipseStatus: EclipseStatus = .normal
-    private var displayMode: DisplayMode = .lightMode
-    var delegate: UpdateEclipse?
+    private var currentTaskStatus: CurrentTaskStatus = .normal
+    var delegate: UpdateEclipseStatusDelegate?
     private var currentTask: TodoItem?
     private var deadlineText = ""
-    private var labelBottomConstraint: NSLayoutConstraint?
-    private var labelLeadingConstraint: NSLayoutConstraint?
-    private let importantImageView = UIImageView()
-    private let littleCalendar = UIImageView()
-    
+    private let stackViewSpacing: CGFloat = 5
+    private let imageSize = CGSize(width: 15, height: 15)
+    private lazy var insetForSeparator = taskStatusButton.frame.size.width + InsetConstants.horizontalInsetBetweenElements.value + WindowInsetConstants.leading.value
+    private let statusButtonSize = CGSize(width: 24, height: 24)
+
     override func prepareForReuse() {
         super.prepareForReuse()
         deadlineText = ""
         taskDescriptionLabel.attributedText = nil
         taskDescriptionLabel.text = nil
-        eclipseStatus = .normal
+        currentTaskStatus = .normal
+        taskStatusButton.layer.borderColor = nil
+        taskStatusButton.backgroundColor = nil
     }
     
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: AllTaskCell.identifier)
         shevronImageViewConfigure()
-        eclipseConfigure()
-        labelConfigure()
+        taskStatusButtonConfigure()
+        mainStackViewConfigure()
+        colorsConfigure()
     }
     
     required init?(coder: NSCoder) {
@@ -64,80 +72,60 @@ final class AllTaskCell: UITableViewCell {
     
     override func layoutSubviews() {
         super.layoutSubviews()
-        switch eclipseStatus {
-        case .done:
-            eclipse.backgroundColor = CustomColor(displayMode: displayMode).green
-        case .normal:
-            eclipse.layer.borderColor = CustomColor(displayMode: displayMode).supportSeparator.cgColor
-        case .falledDeadline:
-            eclipse.backgroundColor = (CustomColor(displayMode: displayMode).red).withAlphaComponent(0.6)
-            eclipse.layer.borderColor = CustomColor(displayMode: displayMode).red.cgColor
-            eclipse.layer.borderWidth = 1.5
-        }
-        deadlineLabel.textColor = CustomColor(displayMode: displayMode).supportSeparator
-        littleCalendar.tintColor = CustomColor(displayMode: displayMode).supportSeparator
-        backgroundColor = CustomColor(displayMode: displayMode).backSecondary
-        contentView.backgroundColor = CustomColor(displayMode: displayMode).backSecondary
-        taskDescriptionLabel.textColor = CustomColor(displayMode: displayMode).labelPrimary
-        eclipse.layer.cornerRadius = 12
-        
-        let value = eclipse.frame.size.width + InsetConstants.horizontalInsetBetweenElements.value + WindowInsetConstants.leading.value
-        separatorInset = UIEdgeInsets(top: 0, left: value, bottom: 0, right: 0)
+        taskStatusButton.layer.cornerRadius = 12
+        separatorInset = UIEdgeInsets(top: 0, left: insetForSeparator, bottom: 0, right: 0)
     }
-    
+
+    private func colorsConfigure() {
+        deadlineLabel.textColor = UIColor(dynamicProvider: { trait in
+            return CustomColor(trait: trait).supportSeparator
+        })
+        backgroundColor = UIColor(dynamicProvider: { trait in
+            return CustomColor(trait: trait).backSecondary
+        })
+        contentView.backgroundColor = UIColor(dynamicProvider: { trait in
+            return CustomColor(trait: trait).backSecondary
+        })
+        taskDescriptionLabel.textColor = UIColor(dynamicProvider: { trait in
+            return CustomColor(trait: trait).labelPrimary
+        })
+    }
     @objc private func updateEclipse() {
         isDone.toggle()
         if !isDone {
-            eclipse.setTitle("", for: .normal)
-            eclipse.backgroundColor = .clear
-            eclipse.layer.borderWidth = 1.5
-            eclipse.layer.borderColor = CustomColor(displayMode: displayMode).supportSeparator.cgColor
+            taskStatusButton.setTitle("", for: .normal)
+            taskStatusButton.backgroundColor = .clear
+            taskStatusButton.layer.borderWidth = 1.5
+            taskStatusButton.layer.borderColor = UIColor(dynamicProvider: { trait in
+                return CustomColor(trait: trait).supportSeparator
+            }).cgColor
         } else {
-            eclipse.backgroundColor = CustomColor(displayMode: displayMode).green
-            eclipse.layer.borderWidth = 0
-            eclipse.setTitle("✓", for: .normal)
-            eclipse.titleLabel?.font = CustomFont.footnote
-            eclipse.setTitleColor(.white, for: .normal)
+            taskStatusButton.backgroundColor = UIColor(dynamicProvider: { trait in
+                return CustomColor(trait: trait).green
+            })
+            taskStatusButton.layer.borderWidth = 0
+            taskStatusButton.setTitle("✓", for: .normal)
+            taskStatusButton.titleLabel?.font = CustomFont.footnote
+            taskStatusButton.setTitleColor(.white, for: .normal)
         }
         if let deadlineIsFalled = currentTask?.deadLine {
-            if deadlineIsFalled < Date.now.endOfDay && eclipseStatus == .normal {
-                eclipse.setTitle("", for: .normal)
-                eclipse.backgroundColor = (CustomColor(displayMode: displayMode).red).withAlphaComponent(0.6)
-                eclipse.layer.borderColor = CustomColor(displayMode: displayMode).red.cgColor
-                eclipse.layer.borderWidth = 1.5
+            if deadlineIsFalled < Date.now.endOfDay && currentTaskStatus == .normal {
+                taskStatusButton.setTitle("", for: .normal)
+                taskStatusButton.backgroundColor = UIColor(dynamicProvider: { trait in
+                    return CustomColor(trait: trait).red
+                }).withAlphaComponent(0.6)
+                taskStatusButton.layer.borderColor = UIColor(dynamicProvider: { trait in
+                    return CustomColor(trait: trait).red
+                }).cgColor
+                taskStatusButton.layer.borderWidth = 1.5
             }
         }
         guard let prevItem = currentTask else { return }
-        let item = TodoItem(id: prevItem.id, text: prevItem.text, important: prevItem.important, deadline: prevItem.deadLine, isTaskComplete: isDone, addTaskDate: prevItem.addTaskDate, changeTaskDate: prevItem.changeTaskDate)
-        delegate?.updateEclipse(item: item)
+        delegate?.updateEclipse(item: prevItem.withComplete(isDone))
     }
 }
 // MARK: - Configure view
 extension AllTaskCell {
-    private func deadlineLabelConfigure(withText: String) {
-        if !deadlineText.isEmpty {
-            contentView.addSubview(deadlineLabel)
-            deadlineLabel.font = CustomFont.subhead
-            deadlineLabel.translatesAutoresizingMaskIntoConstraints = false
-            contentView.addSubview(littleCalendar)
-            littleCalendar.translatesAutoresizingMaskIntoConstraints = false
-            littleCalendar.contentMode = .scaleAspectFit
-            littleCalendar.image = UIImage(named: "littleCalendar")
-            let sizeLittleCalendar = CGSize(width: 15, height: 15)
-            NSLayoutConstraint.activate ([
-                littleCalendar.leadingAnchor.constraint(equalTo: taskDescriptionLabel.leadingAnchor),
-                littleCalendar.centerYAnchor.constraint(equalTo: deadlineLabel.centerYAnchor),
-                littleCalendar.widthAnchor.constraint(equalToConstant: sizeLittleCalendar.width),
-                littleCalendar.heightAnchor.constraint(equalToConstant: sizeLittleCalendar.height),
-
-                deadlineLabel.topAnchor.constraint(equalTo: taskDescriptionLabel.bottomAnchor),
-                deadlineLabel.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -InsetConstants.verticalInsetBetweenElements.value),
-                deadlineLabel.leadingAnchor.constraint(equalTo: littleCalendar.trailingAnchor, constant: InsetConstants.horizontalSpaceBetweenImageAndLabel.value)
-            ])
-        deadlineLabel.text = withText
-        }
-    }
-    
     private func shevronImageViewConfigure() {
         contentView.addSubview(shevronImageView)
         shevronImageView.translatesAutoresizingMaskIntoConstraints = false
@@ -152,56 +140,81 @@ extension AllTaskCell {
         shevronImageView.contentMode = .scaleAspectFit
     }
     
-    private func labelConfigure() {
-        contentView.addSubview(taskDescriptionLabel)
-        taskDescriptionLabel.translatesAutoresizingMaskIntoConstraints = false
+    private func mainStackViewConfigure() {
+        contentView.addSubview(horizontalStackViewImageImportantAndLabel)
+        horizontalStackViewImageImportantAndLabel.axis = .horizontal
+        horizontalStackViewImageImportantAndLabel.spacing = stackViewSpacing
+        horizontalStackViewImageImportantAndLabel.addArrangedSubview(importantImageView)
+        horizontalStackViewImageImportantAndLabel.addArrangedSubview(verticalStackViewImageDeadlineAndLabel)
+        horizontalStackViewImageImportantAndLabel.alignment = .center
+        horizontalStackViewImageImportantAndLabel.distribution = .fill
+        horizontalStackViewImageImportantAndLabel.translatesAutoresizingMaskIntoConstraints = false
             NSLayoutConstraint.activate([
-                taskDescriptionLabel.topAnchor.constraint(equalTo: contentView.topAnchor, constant: InsetConstants.verticalInsetBetweenElements.value),
-                taskDescriptionLabel.trailingAnchor.constraint(equalTo: shevronImageView.leadingAnchor, constant: -InsetConstants.horizontalInsetBetweenElements.value)
+                horizontalStackViewImageImportantAndLabel.topAnchor.constraint(equalTo: contentView.topAnchor, constant: InsetConstants.verticalInsetBetweenElements.value),
+                horizontalStackViewImageImportantAndLabel.trailingAnchor.constraint(equalTo: shevronImageView.leadingAnchor, constant: -InsetConstants.horizontalInsetBetweenElements.value),
+                horizontalStackViewImageImportantAndLabel.leadingAnchor.constraint(equalTo: taskStatusButton.trailingAnchor, constant: InsetConstants.horizontalInsetBetweenElements.value),
+                horizontalStackViewImageImportantAndLabel.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -InsetConstants.verticalInsetBetweenElements.value)
             ])
-        labelLeadingConstraint = taskDescriptionLabel.leadingAnchor.constraint(equalTo: eclipse.trailingAnchor, constant: InsetConstants.horizontalInsetBetweenElements.value)
-        labelLeadingConstraint?.isActive = true
-        labelBottomConstraint = taskDescriptionLabel.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -InsetConstants.verticalInsetBetweenElements.value)
-        labelBottomConstraint?.isActive = true
-        labelBottomConstraint?.priority = .defaultHigh
+        importantImageViewConfigure()
+        verticalStackViewConfigure()
+    }
+    
+    private func verticalStackViewConfigure() {
+        verticalStackViewImageDeadlineAndLabel.axis = .vertical
+        verticalStackViewImageDeadlineAndLabel.spacing = stackViewSpacing
+        verticalStackViewImageDeadlineAndLabel.distribution = .fillProportionally
+        verticalStackViewImageDeadlineAndLabel.alignment = .fill
+        verticalStackViewImageDeadlineAndLabel.addArrangedSubview(taskDescriptionLabel)
+        verticalStackViewImageDeadlineAndLabel.addArrangedSubview(deadlineLabel)
+        labelConfigure()
+    }
+    
+    private func deadlineLabelConfigure(withText: String) {
+        guard
+            let image = UIImage(systemName: "calendar")
+        else { return }
+        deadlineLabel.font = CustomFont.subhead
+        deadlineLabel.attributedText = addTextWithImage(with: withText, and: image)
+    }
+    
+    private func labelConfigure() {
         taskDescriptionLabel.font = CustomFont.body
         taskDescriptionLabel.numberOfLines = 3
     }
-    
-    private func eclipseConfigure() {
-        contentView.addSubview(eclipse)
-        let eclipseSize = CGSize(width: 24, height: 24)
-        eclipse.translatesAutoresizingMaskIntoConstraints = false
-        NSLayoutConstraint.activate([
-            eclipse.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
-            eclipse.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: WindowInsetConstants.leading.value),
-            eclipse.widthAnchor.constraint(equalToConstant: eclipseSize.width),
-            eclipse.heightAnchor.constraint(equalToConstant: eclipseSize.height)
-        ])
-        eclipse.addTarget(self, action: #selector(updateEclipse), for: .touchUpInside)
-    }
-    
     private func importantImageViewConfigure() {
-        contentView.addSubview(importantImageView)
-        let sizeImage = CGSize(width: 15, height: 15)
         importantImageView.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
-            importantImageView.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
-            importantImageView.leadingAnchor.constraint(equalTo: eclipse.trailingAnchor, constant: InsetConstants.horizontalInsetBetweenElements.value),
-            importantImageView.widthAnchor.constraint(equalToConstant: sizeImage.width),
-            importantImageView.heightAnchor.constraint(equalToConstant: sizeImage.height)
+            importantImageView.widthAnchor.constraint(equalToConstant: imageSize.width),
+            importantImageView.heightAnchor.constraint(equalToConstant: imageSize.height)
         ])
         importantImageView.contentMode = .scaleAspectFit
     }
+    private func taskStatusButtonConfigure() {
+        contentView.addSubview(taskStatusButton)
+        taskStatusButton.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            taskStatusButton.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
+            taskStatusButton.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: WindowInsetConstants.leading.value),
+            taskStatusButton.widthAnchor.constraint(equalToConstant: statusButtonSize.width),
+            taskStatusButton.heightAnchor.constraint(equalToConstant: statusButtonSize.height)
+        ])
+        taskStatusButton.addTarget(self, action: #selector(updateEclipse), for: .touchUpInside)
+    }
+    private func addTextWithImage(with text: String, and image: UIImage) -> NSMutableAttributedString {
+        let mutableString = NSMutableAttributedString()
+        let attachment = NSTextAttachment(image: image)
+        let attrAttachment = NSAttributedString(attachment: attachment)
+        let text = NSAttributedString(string: text)
+        mutableString.append(attrAttachment)
+        mutableString.append(text)
+        return mutableString
+    }
 }
-
 //MARK: - Fill Data
 extension AllTaskCell {
-    func fillData(task: TodoItem, currentIndexpath: Int, displayMode: DisplayMode, tableViewWidth: CGFloat) {
-        taskDescriptionLabel.preferredMaxLayoutWidth = tableViewWidth
-        var eclipseStatus = EclipseStatus.normal
+    func fillData(task: TodoItem, currentIndexpath: Int) {
+        var eclipseStatus = CurrentTaskStatus.normal
         self.isDone = task.isTaskComplete
-        self.displayMode = displayMode
         self.currentTask = task
         let attributeString = NSMutableAttributedString(string: task.text)
         attributeString.addAttribute(NSAttributedString.Key.strikethroughStyle, value: 2, range: NSRange(location: 0, length: attributeString.length))
@@ -227,55 +240,51 @@ extension AllTaskCell {
         if eclipseStatus == .normal && falledDeadline {
             eclipseStatus = .falledDeadline
         }
+        
         switch eclipseStatus {
         case .done:
-            eclipse.backgroundColor = CustomColor(displayMode: displayMode).green
-            eclipse.layer.borderWidth = 0
-            eclipse.setTitle("✓", for: .normal)
-            eclipse.titleLabel?.font = CustomFont.footnote
-            eclipse.setTitleColor(.white, for: .normal)
+            taskStatusButton.backgroundColor = UIColor(dynamicProvider: { trait in
+                return CustomColor(trait: trait).green
+            })
+            taskStatusButton.layer.borderWidth = 0
+            taskStatusButton.setTitle("✓", for: .normal)
+            taskStatusButton.titleLabel?.font = CustomFont.footnote
+            taskStatusButton.setTitleColor(.white, for: .normal)
         case .normal:
-            eclipse.setTitle("", for: .normal)
-            eclipse.backgroundColor = .clear
-            eclipse.layer.borderWidth = 1.5
-            eclipse.layer.borderColor = CustomColor(displayMode: displayMode).supportSeparator.cgColor
+            taskStatusButton.setTitle("", for: .normal)
+            taskStatusButton.backgroundColor = .clear
+            taskStatusButton.layer.borderWidth = 1.5
+            taskStatusButton.layer.borderColor = UIColor(dynamicProvider: { trait in
+                return .gray
+            }).cgColor
         case .falledDeadline:
-            eclipse.setTitle("", for: .normal)
-            eclipse.backgroundColor = (CustomColor(displayMode: displayMode).red).withAlphaComponent(0.6)
-            eclipse.layer.borderColor = CustomColor(displayMode: displayMode).red.cgColor
-            eclipse.layer.borderWidth = 1.5
+            taskStatusButton.setTitle("", for: .normal)
+            taskStatusButton.backgroundColor = UIColor(dynamicProvider: { trait in
+                return CustomColor(trait: trait).red
+            }).withAlphaComponent(0.6)
+            taskStatusButton.layer.borderColor = UIColor(dynamicProvider: { trait in
+                return CustomColor(trait: trait).red
+            }).cgColor
+            taskStatusButton.layer.borderWidth = 1.5
         }
-        self.eclipseStatus = eclipseStatus
+        self.currentTaskStatus = eclipseStatus
         if !deadlineText.isEmpty {
-            labelBottomConstraint?.isActive = false
-            labelBottomConstraint?.priority = .defaultHigh
+            deadlineLabel.isHidden = false
             deadlineLabelConfigure(withText: deadlineText)
         } else {
-            littleCalendar.removeFromSuperview()
-            deadlineLabel.removeFromSuperview()
-            labelBottomConstraint?.isActive = true
-            labelBottomConstraint?.priority = .defaultHigh
+            deadlineLabel.isHidden = true
         }
         
         switch task.important {
         case .important:
-            labelLeadingConstraint?.isActive = false
-            importantImageViewConfigure()
             importantImageView.image = UIImage(named: "importantImage")
-            labelLeadingConstraint = taskDescriptionLabel.leadingAnchor.constraint(equalTo: importantImageView.trailingAnchor, constant: InsetConstants.horizontalSpaceBetweenImageAndLabel.value)
-            labelLeadingConstraint?.isActive = true
+            importantImageView.isHidden = false
         case .basic:
-            labelLeadingConstraint?.isActive = false
-            importantImageView.removeFromSuperview()
-            labelLeadingConstraint = taskDescriptionLabel.leadingAnchor.constraint(equalTo: eclipse.trailingAnchor, constant: InsetConstants.horizontalInsetBetweenElements.value)
-            labelLeadingConstraint?.isActive = true
-            break
+            importantImageView.isHidden = true
         case .unimportant:
-            labelLeadingConstraint?.isActive = false
-            importantImageViewConfigure()
             importantImageView.image = UIImage(named: "unimportantImage")
-            labelLeadingConstraint = taskDescriptionLabel.leadingAnchor.constraint(equalTo: importantImageView.trailingAnchor, constant: InsetConstants.horizontalSpaceBetweenImageAndLabel.value)
-            labelLeadingConstraint?.isActive = true
+            importantImageView.isHidden = false
         }
+        layoutIfNeeded()
     }
 }
