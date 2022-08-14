@@ -5,6 +5,7 @@
 //  Created by Aleksandr on 02.08.2022.
 //
 import UIKit
+import CocoaLumberjack
 
 protocol WorkWithFileCache {
     func saveDataInFileCache()
@@ -37,6 +38,7 @@ final class AllTaskTableViewController: UITableViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        loggerConfigure()
         configure()
         getData()
         NotificationCenter.default.addObserver(self, selector: #selector(changeOrientation), name: UIDevice.orientationDidChangeNotification, object: nil)
@@ -51,11 +53,14 @@ final class AllTaskTableViewController: UITableViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         self.button.isHidden = false
+        
     }
     
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
+//        DDLogInfo("My view controller did appear!")
         updateLayer()
+      
     }
     
     override func viewWillDisappear(_ animated: Bool) {
@@ -66,6 +71,13 @@ final class AllTaskTableViewController: UITableViewController {
         button.frame.origin = CGPoint(x: view.center.x - 25, y: view.frame.height - 100)
     }
     
+    private func loggerConfigure() {
+        DDLog.add(DDOSLogger.sharedInstance)
+        let fileLogger: DDFileLogger = DDFileLogger()
+        fileLogger.rollingFrequency = 60 * 60 * 24
+        fileLogger.logFileManager.maximumNumberOfLogFiles = 7
+        DDLog.add(fileLogger)
+    }
     private func configure() {
         configureNavigationItem()
         buttonConfigure()
@@ -103,6 +115,7 @@ final class AllTaskTableViewController: UITableViewController {
     
     private func getData() {
         loadDataInFileCache()
+        DDLogInfo(allTask)
     }
     
     private func configureNavigationItem() {
@@ -331,9 +344,11 @@ extension AllTaskTableViewController: WorkWithFileCache {
             try fileCache.saveToFile(FileCache.fileName)
         } catch FileCacheError.saveError(let saveErrorMessage) {
             let alert = addAlert(title: "Внимание", message: saveErrorMessage)
+            DDLogError("Error")
             present(alert, animated: true, completion: nil)
         } catch {
             let alert = addAlert(title: "Внимание", message: "Произошла ошибка")
+            DDLogError("Error")
             present(alert, animated: true, completion: nil)
         }
     }
@@ -344,10 +359,12 @@ extension AllTaskTableViewController: WorkWithFileCache {
         } catch FileCacheError.loadError(let loadErrorMessage) {
             if !(allTask.isEmpty && fileCache.todoItems.isEmpty) {
                 let alert = addAlert(title: "Внимание", message: loadErrorMessage)
+                DDLogError("Error")
                 present(alert, animated: true, completion: nil)
             }
         } catch {
             let alert = addAlert(title: "Внимание", message: "Произошла ошибка")
+            DDLogError("Error")
             present(alert, animated: true, completion: nil)
         }
     }
