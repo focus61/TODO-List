@@ -8,15 +8,14 @@ import UIKit
 import CocoaLumberjack
 
 protocol WorkWithFileCache {
-    func saveDataInFileCache()
-    func loadDataInFileCache()
+    func saveDataInFileCache(isBeginUpdates: Bool)
+    func loadDataInFileCache(handler: @escaping ([TodoItem]) -> Void)
 }
-// (- Доделать ориентацию детально...). (todo)
+
 final class AllTaskTableViewController: UITableViewController {
+    private var currentItems = [TodoItem]()
+    private let activityIndiicatorView: UIActivityIndicatorView = .init(frame: CGRect(x: 0, y: 0, width: 25, height: 25))
     private var allTask: [TodoItem] {
-        let currentItems = fileCache.todoItems.map { $0.value }.sorted(by: { val1, val2 in
-            val1.addTaskDate < val2.addTaskDate
-        })
         let filterItems = currentItems.filter { !$0.isTaskComplete }
         if filterItems.count == currentItems.count {
             isFiltered = true
@@ -40,7 +39,12 @@ final class AllTaskTableViewController: UITableViewController {
         super.viewDidLoad()
         loggerConfigure()
         configure()
-        getData()
+        activityConfigure()
+        loadDataInFileCache { items in
+            self.currentItems = items
+            self.tableView.reloadData()
+        }
+        
         NotificationCenter.default.addObserver(self, selector: #selector(changeOrientation), name: UIDevice.orientationDidChangeNotification, object: nil)
         self.navigationController?.view.addSubview(button)
         changeColors()
@@ -58,9 +62,9 @@ final class AllTaskTableViewController: UITableViewController {
     
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-//        DDLogInfo("My view controller did appear!")
         updateLayer()
-      
+        activityIndiicatorView.frame.size = CGSize(width: 25, height: 25)
+        activityIndiicatorView.center = view.center
     }
     
     override func viewWillDisappear(_ animated: Bool) {
@@ -69,6 +73,14 @@ final class AllTaskTableViewController: UITableViewController {
     
     @objc private func changeOrientation() {
         button.frame.origin = CGPoint(x: view.center.x - 25, y: view.frame.height - 100)
+    }
+    
+    private func activityConfigure() {
+        self.navigationController?.view.addSubview(activityIndiicatorView)
+        tableView.isHidden = true
+        activityIndiicatorView.isHidden = false
+        activityIndiicatorView.startAnimating()
+        activityIndiicatorView.hidesWhenStopped = true
     }
     
     private func loggerConfigure() {
@@ -90,6 +102,7 @@ final class AllTaskTableViewController: UITableViewController {
         button.setImage(image, for: .normal)
         button.addTarget(self, action: #selector(addTask), for: .touchUpInside)
     }
+    
     private func updateLayer() {
         let buttonSize = CGSize(width: 44, height: 44)
         button.frame.origin = CGPoint(x: view.center.x - 25, y: view.frame.height - 100)
@@ -111,11 +124,6 @@ final class AllTaskTableViewController: UITableViewController {
         tableView.register(AddTaskCell.self, forCellReuseIdentifier: AddTaskCell.identifier)
         tableView.delegate = self
         tableView.dataSource = self
-    }
-    
-    private func getData() {
-        loadDataInFileCache()
-        DDLogInfo(allTask)
     }
     
     private func configureNavigationItem() {
@@ -212,13 +220,12 @@ extension AllTaskTableViewController {
         let deleteAction = UIContextualAction(style: .destructive, title: nil) { [weak self] _, _, _ in
             guard let self = self else { return }
             var itemId = ""
-            self.tableView.beginUpdates()
             itemId = self.allTask[indexPath.row].id
-            self.tableView.deleteRows(at: [indexPath], with: .automatic)
             self.fileCache.deleteTask(id: itemId)
-            self.saveDataInFileCache()
-            self.getData()
-            self.tableView.endUpdates()
+            self.tableView.beginUpdates()
+            self.tableView.deleteRows(at: [indexPath], with: .automatic)
+            self.saveDataInFileCache(isBeginUpdates: true)
+
         }
         let infoAction = UIContextualAction(style: .normal, title: nil) { [weak self] _, _, _ in
             guard let self = self else { return }
@@ -245,8 +252,6 @@ extension AllTaskTableViewController {
             self.fileCache.deleteTask(id: item.id)
             self.fileCache.addTask(item: item)
             self.saveDataInFileCache()
-            self.getData()
-            self.tableView.reloadData()
         }
         doneAction.image = UIImage(named: "done")
         doneAction.backgroundColor = UIColor(dynamicProvider: { trait in
@@ -271,8 +276,6 @@ extension AllTaskTableViewController {
                     let newItem = TodoItem(text: item.text, important: item.important, addTaskDate: Date.now)
                     self.fileCache.addTask(item: newItem)
                     self.saveDataInFileCache()
-                    self.getData()
-                    self.tableView.reloadData()
                 }
             ])
             return UIMenu(title: "Действия", children: [ editMenu ])
@@ -301,26 +304,19 @@ extension AllTaskTableViewController: UpdateAllTasksDelegate {
     func updateTask(item: TodoItem) {
         fileCache.addTask(item: item)
         saveDataInFileCache()
-        getData()
-        self.tableView.reloadData()
     }
     
     func deleteTask(id: String) {
         self.fileCache.deleteTask(id: id)
         saveDataInFileCache()
-        getData()
-        self.tableView.reloadData()
-
     }
 }
 
 extension AllTaskTableViewController: UpdateStatusTaskDelegate {
-    func updateEclipse(item: TodoItem) {
+    func updateStatus(item: TodoItem) {
         fileCache.deleteTask(id: item.id)
         fileCache.addTask(item: item)
         saveDataInFileCache()
-        getData()
-        self.tableView.reloadData()
     }
 }
 
@@ -339,33 +335,44 @@ extension AllTaskTableViewController: ShowAndHideDoneTasksDelegate {
 }
 
 extension AllTaskTableViewController: WorkWithFileCache {
-    func saveDataInFileCache() {
-        do {
-            try fileCache.saveToFile(FileCache.fileName)
-        } catch FileCacheError.saveError(let saveErrorMessage) {
-            let alert = addAlert(title: "Внимание", message: saveErrorMessage)
-            DDLogError("Error")
-            present(alert, animated: true, completion: nil)
-        } catch {
-            let alert = addAlert(title: "Внимание", message: "Произошла ошибка")
-            DDLogError("Error")
-            present(alert, animated: true, completion: nil)
+    
+    func saveDataInFileCache(isBeginUpdates: Bool = false) {
+        tableView.isHidden = true
+        activityIndiicatorView.isHidden = false
+        activityIndiicatorView.startAnimating()
+        fileCache.save(to: FileCache.fileName) { result in
+            switch result {
+            case .failure(let saveErrorMessage):
+                let alert = self.addAlert(title: "Внимание", message: saveErrorMessage.localizedDescription)
+                DDLogError("Error")
+                self.present(alert, animated: true, completion: nil)
+            case .success:
+                self.loadDataInFileCache { items in
+                    self.currentItems = items
+                    if !isBeginUpdates {
+                        self.tableView.reloadData()
+                    } else {
+                        self.tableView.endUpdates()
+                    }
+                }
+            }
         }
     }
     
-    func loadDataInFileCache() {
-        do {
-            try fileCache.loadFromFile(FileCache.fileName)
-        } catch FileCacheError.loadError(let loadErrorMessage) {
-            if !(allTask.isEmpty && fileCache.todoItems.isEmpty) {
-                let alert = addAlert(title: "Внимание", message: loadErrorMessage)
-                DDLogError("Error")
-                present(alert, animated: true, completion: nil)
+    func loadDataInFileCache(handler: @escaping ([TodoItem]) -> Void) {
+        fileCache.load(from: FileCache.fileName) { result in
+            switch result {
+            case .success(let items):
+                self.activityIndiicatorView.stopAnimating()
+                self.tableView.isHidden = false
+                handler(items)
+            case .failure(let loadErrorMessage):
+                if !(self.allTask.isEmpty && self.fileCache.todoItems.isEmpty) {
+                    let alert = self.addAlert(title: "Внимание", message: loadErrorMessage.localizedDescription)
+                    DDLogError("Error")
+                    self.present(alert, animated: true, completion: nil)
+                }
             }
-        } catch {
-            let alert = addAlert(title: "Внимание", message: "Произошла ошибка")
-            DDLogError("Error")
-            present(alert, animated: true, completion: nil)
         }
     }
 }

@@ -26,7 +26,7 @@ enum InsetConstants {
     }
 }
 protocol UpdateStatusTaskDelegate: AnyObject {
-    func updateEclipse(item: TodoItem)
+    func updateStatus(item: TodoItem)
 }
 
 final class AllTaskCell: UITableViewCell {
@@ -90,7 +90,7 @@ final class AllTaskCell: UITableViewCell {
             return CustomColor(trait: trait).labelPrimary
         })
     }
-    @objc private func updateEclipse() {
+    @objc private func updateTaskStatus() {
         isDone.toggle()
         if !isDone {
             taskStatusButton.setTitle("", for: .normal)
@@ -121,7 +121,7 @@ final class AllTaskCell: UITableViewCell {
             }
         }
         guard let prevItem = currentTask else { return }
-        delegate?.updateEclipse(item: prevItem.withComplete(isDone))
+        delegate?.updateStatus(item: prevItem.withComplete(isDone))
     }
 }
 // MARK: - Configure view
@@ -198,7 +198,7 @@ extension AllTaskCell {
             taskStatusButton.widthAnchor.constraint(equalToConstant: statusButtonSize.width),
             taskStatusButton.heightAnchor.constraint(equalToConstant: statusButtonSize.height)
         ])
-        taskStatusButton.addTarget(self, action: #selector(updateEclipse), for: .touchUpInside)
+        taskStatusButton.addTarget(self, action: #selector(updateTaskStatus), for: .touchUpInside)
     }
     private func addTextWithImage(with text: String, and image: UIImage) -> NSMutableAttributedString {
         let mutableString = NSMutableAttributedString()
@@ -217,7 +217,7 @@ extension AllTaskCell {
         self.isDone = task.isTaskComplete
         self.currentTask = task
         let attributeString = NSMutableAttributedString(string: task.text)
-        attributeString.addAttribute(NSAttributedString.Key.strikethroughStyle, value: 2, range: NSRange(location: 0, length: attributeString.length))        
+        attributeString.addAttribute(NSAttributedString.Key.strikethroughStyle, value: 2, range: NSRange(location: 0, length: attributeString.length))
         if isDone {
             taskDescriptionLabel.attributedText = attributeString
             statusTask = .done
