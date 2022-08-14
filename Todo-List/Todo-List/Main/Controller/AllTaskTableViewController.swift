@@ -10,7 +10,7 @@ protocol WorkWithFileCache {
     func saveDataInFileCache()
     func loadDataInFileCache()
 }
-// TODO: - Доделать ориентацию детального экрана
+// (- Доделать ориентацию детально...). (todo)
 final class AllTaskTableViewController: UITableViewController {
     private var allTask: [TodoItem] {
         let currentItems = fileCache.todoItems.map { $0.value }.sorted(by: { val1, val2 in
@@ -124,22 +124,22 @@ final class AllTaskTableViewController: UITableViewController {
     }
     
     private func presentNewTaskScreen() {
-        let vc = CurrentTaskViewController()
-        vc.delegate = self
-        let navCont = UINavigationController(rootViewController: vc)
+        let currentTaskViewController = CurrentTaskViewController()
+        currentTaskViewController.delegate = self
+        let navCont = UINavigationController(rootViewController: currentTaskViewController)
         navigationController?.present(navCont, animated: true, completion: nil)
     }
     
     private func presentCurrentTaskScreen(item: TodoItem?) -> UINavigationController {
-        let vc = CurrentTaskViewController()
-        vc.currentItem = item
-        vc.isChange = true
-        vc.delegate = self
-        let navCont = UINavigationController(rootViewController: vc)
+        let currentTaskViewController = CurrentTaskViewController()
+        currentTaskViewController.currentItem = item
+        currentTaskViewController.isChange = true
+        currentTaskViewController.delegate = self
+        let navCont = UINavigationController(rootViewController: currentTaskViewController)
         return navCont
     }
 }
-//MARK: - Table view data source -
+// MARK: - Table view data source -
 extension AllTaskTableViewController {
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         if allTask.isEmpty
@@ -166,7 +166,7 @@ extension AllTaskTableViewController {
         }
     }
 }
-//MARK: - Table view delegate -
+// MARK: - Table view delegate -
 extension AllTaskTableViewController {
     
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
@@ -193,10 +193,10 @@ extension AllTaskTableViewController {
         return customHeader
     }
 }
-//MARK: - Leading & Trailing swipe -
+// MARK: - Leading & Trailing swipe -
 extension AllTaskTableViewController {
     override func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
-        let deleteAction = UIContextualAction(style: .destructive, title: nil) { [weak self] _,_,_ in
+        let deleteAction = UIContextualAction(style: .destructive, title: nil) { [weak self] _, _, _ in
             guard let self = self else { return }
             var itemId = ""
             self.tableView.beginUpdates()
@@ -207,7 +207,7 @@ extension AllTaskTableViewController {
             self.getData()
             self.tableView.endUpdates()
         }
-        let infoAction = UIContextualAction(style: .normal, title: nil) { [weak self] _,_,_ in
+        let infoAction = UIContextualAction(style: .normal, title: nil) { [weak self] _, _, _ in
             guard let self = self else { return }
             let item = self.allTask[indexPath.row]
             self.navigationController?.present(self.presentCurrentTaskScreen(item: item),
@@ -223,11 +223,9 @@ extension AllTaskTableViewController {
         return actions
     }
     
-    
-    
     override func tableView(_ tableView: UITableView, leadingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
         let currentTask = allTask[indexPath.row]
-        let doneAction = UIContextualAction(style: .normal, title: nil) {[weak self] _,_,_ in
+        let doneAction = UIContextualAction(style: .normal, title: nil) {[weak self] _, _, _ in
             guard let self = self else { return }
             let isDone = true
             let item = currentTask.withComplete(isDone)
@@ -246,7 +244,7 @@ extension AllTaskTableViewController {
         return actions
     }
 }
-//MARK: - UIContextMenuConfiguration -
+// MARK: - UIContextMenuConfiguration -
 extension AllTaskTableViewController {
     override func tableView(_ tableView: UITableView, contextMenuConfigurationForRowAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration? {
         let item = allTask[indexPath.row]
@@ -273,8 +271,10 @@ extension AllTaskTableViewController {
             },
             actionProvider: actionProvider)
     }
-    
-    override func tableView(_ tableView: UITableView, willPerformPreviewActionForMenuWith configuration: UIContextMenuConfiguration, animator: UIContextMenuInteractionCommitAnimating) {
+// swiftlint:disable line_length
+    override func tableView(_ tableView: UITableView, willPerformPreviewActionForMenuWith configuration: UIContextMenuConfiguration, animator: UIContextMenuInteractionCommitAnimating)
+// swiftlint:enable line_length
+    {
         guard let destinationViewController = animator.previewViewController else {
             return
         }
@@ -283,7 +283,7 @@ extension AllTaskTableViewController {
         }
     }
 }
-//MARK: - Delegate methods -
+// MARK: - Delegate methods -
 extension AllTaskTableViewController: UpdateAllTasksDelegate {
     func updateTask(item: TodoItem) {
         fileCache.addTask(item: item)
@@ -301,7 +301,7 @@ extension AllTaskTableViewController: UpdateAllTasksDelegate {
     }
 }
 
-extension AllTaskTableViewController: UpdateEclipseStatusDelegate {
+extension AllTaskTableViewController: UpdateStatusTaskDelegate {
     func updateEclipse(item: TodoItem) {
         fileCache.deleteTask(id: item.id)
         fileCache.addTask(item: item)
@@ -332,7 +332,7 @@ extension AllTaskTableViewController: WorkWithFileCache {
         } catch FileCacheError.saveError(let saveErrorMessage) {
             let alert = addAlert(title: "Внимание", message: saveErrorMessage)
             present(alert, animated: true, completion: nil)
-        } catch  {
+        } catch {
             let alert = addAlert(title: "Внимание", message: "Произошла ошибка")
             present(alert, animated: true, completion: nil)
         }

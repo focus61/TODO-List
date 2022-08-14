@@ -6,7 +6,7 @@
 //
 
 import UIKit
-protocol ShowAndHideDoneTasksDelegate {
+protocol ShowAndHideDoneTasksDelegate: AnyObject {
     func show(newItem: [TodoItem])
     func hide(newItem: [TodoItem])
 }
