@@ -15,10 +15,10 @@ enum WindowInsetConstants: CGFloat {
     
     var value: CGFloat {
         switch self {
-            case .top: return 10
-            case .bottom: return 10
-            case .trailing: return 16
-            case .leading: return 16
+        case .top: return 10
+        case .bottom: return 10
+        case .trailing: return 16
+        case .leading: return 16
         }
     }
 }

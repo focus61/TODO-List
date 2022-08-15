@@ -27,8 +27,7 @@ struct TodoItem {
          deadline: Date? = nil,
          isTaskComplete: Bool = false,
          addTaskDate: Date,
-         changeTaskDate: Date? = nil)
-    {
+         changeTaskDate: Date? = nil) {
         if id.isEmpty {
             self.id = UUID().uuidString
         } else {
@@ -84,24 +83,24 @@ extension TodoItem {
     
     var json: Any {
         let isTaskCompleteValue = isTaskComplete // исправлено
-        var object: [String: Any] = ["identifier" : id,
+        var object: [String: Any] = ["identifier": id,
                                      "text": text,
                                      "isTaskComplete": isTaskCompleteValue,
                                      "addTaskDate": addTaskDate.timeIntervalSince1970
                                     ]
         switch important {
-            case .important:
-                object["important"] = 0
-            case .unimportant:
-                object["important"] = 1
-            case .basic:
-                break
+        case .important:
+            object["important"] = 0
+        case .unimportant:
+            object["important"] = 1
+        case .basic:
+            break
         }
         if let changeTaskDate = changeTaskDate {
             object["changeTaskDate"] = changeTaskDate.timeIntervalSince1970
         }
         
-        if let deadLine = deadLine  {
+        if let deadLine = deadLine {
             object["deadline"] = deadLine.timeIntervalSince1970
         }
         return object

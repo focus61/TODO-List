@@ -13,8 +13,8 @@ enum FileCacheError: Error {
 }
 final class FileCache {
     static let fileName = "JSON"
-    private(set) var todoItems: [String : TodoItem]
-    init(todoItems: [String : TodoItem] = [:]) {
+    private(set) var todoItems: [String: TodoItem]
+    init(todoItems: [String: TodoItem] = [:]) {
         self.todoItems = todoItems
     }
     

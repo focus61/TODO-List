@@ -26,10 +26,10 @@ class ChildViewController: UIViewController {
 
     }
     @objc func addTask() {
-        let vc = CurrentTaskViewController()
+        let currentTaskViewController = CurrentTaskViewController()
 //        vc.delegate = self
         
-        navigationController?.pushViewController(vc, animated: true)
+        navigationController?.pushViewController(currentTaskViewController, animated: true)
 //        navigationController?.present(vc, animated: true, completion: nil)
     }
     override func viewDidAppear(_ animated: Bool) {

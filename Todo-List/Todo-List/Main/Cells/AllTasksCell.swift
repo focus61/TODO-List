@@ -19,13 +19,13 @@ enum InsetConstants {
     case verticalInsetBetweenElements
     var value: CGFloat {
         switch self {
-            case .horizontalInsetBetweenElements : return 10
-            case .horizontalSpaceBetweenImageAndLabel: return 5
-            case .verticalInsetBetweenElements: return 17
+        case .horizontalInsetBetweenElements : return 10
+        case .horizontalSpaceBetweenImageAndLabel: return 5
+        case .verticalInsetBetweenElements: return 17
         }
     }
 }
-protocol UpdateEclipseStatusDelegate {
+protocol UpdateStatusTaskDelegate: AnyObject {
     func updateEclipse(item: TodoItem)
 }
 
@@ -35,12 +35,12 @@ final class AllTaskCell: UITableViewCell {
     private let taskStatusButton: UIButton = .init(frame: .zero)
     private let shevronImageView: UIImageView = .init(frame: .zero)
     private let deadlineLabel: UILabel = .init(frame: .zero)
-    private let horizontalStackViewImageImportantAndLabel: UIStackView = .init(frame: .zero)
+    private let horizontalStackViewImageAndLabel: UIStackView = .init(frame: .zero)
     private let verticalStackViewImageDeadlineAndLabel: UIStackView = .init(frame: .zero)
     private let importantImageView: UIImageView = .init(frame: .zero)
     private var isDone = false
     private var currentTaskStatus: CurrentTaskStatus = .normal
-    var delegate: UpdateEclipseStatusDelegate?
+    var delegate: UpdateStatusTaskDelegate?
     private var currentTask: TodoItem?
     private var deadlineText = ""
     private let stackViewSpacing: CGFloat = 5
@@ -141,19 +141,19 @@ extension AllTaskCell {
     }
     
     private func mainStackViewConfigure() {
-        contentView.addSubview(horizontalStackViewImageImportantAndLabel)
-        horizontalStackViewImageImportantAndLabel.axis = .horizontal
-        horizontalStackViewImageImportantAndLabel.spacing = stackViewSpacing
-        horizontalStackViewImageImportantAndLabel.addArrangedSubview(importantImageView)
-        horizontalStackViewImageImportantAndLabel.addArrangedSubview(verticalStackViewImageDeadlineAndLabel)
-        horizontalStackViewImageImportantAndLabel.alignment = .center
-        horizontalStackViewImageImportantAndLabel.distribution = .fill
-        horizontalStackViewImageImportantAndLabel.translatesAutoresizingMaskIntoConstraints = false
+        contentView.addSubview(horizontalStackViewImageAndLabel)
+        horizontalStackViewImageAndLabel.axis = .horizontal
+        horizontalStackViewImageAndLabel.spacing = stackViewSpacing
+        horizontalStackViewImageAndLabel.addArrangedSubview(importantImageView)
+        horizontalStackViewImageAndLabel.addArrangedSubview(verticalStackViewImageDeadlineAndLabel)
+        horizontalStackViewImageAndLabel.alignment = .center
+        horizontalStackViewImageAndLabel.distribution = .fill
+        horizontalStackViewImageAndLabel.translatesAutoresizingMaskIntoConstraints = false
             NSLayoutConstraint.activate([
-                horizontalStackViewImageImportantAndLabel.topAnchor.constraint(equalTo: contentView.topAnchor, constant: InsetConstants.verticalInsetBetweenElements.value),
-                horizontalStackViewImageImportantAndLabel.trailingAnchor.constraint(equalTo: shevronImageView.leadingAnchor, constant: -InsetConstants.horizontalInsetBetweenElements.value),
-                horizontalStackViewImageImportantAndLabel.leadingAnchor.constraint(equalTo: taskStatusButton.trailingAnchor, constant: InsetConstants.horizontalInsetBetweenElements.value),
-                horizontalStackViewImageImportantAndLabel.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -InsetConstants.verticalInsetBetweenElements.value)
+                horizontalStackViewImageAndLabel.topAnchor.constraint(equalTo: contentView.topAnchor, constant: InsetConstants.verticalInsetBetweenElements.value),
+                horizontalStackViewImageAndLabel.trailingAnchor.constraint(equalTo: shevronImageView.leadingAnchor, constant: -InsetConstants.horizontalInsetBetweenElements.value),
+                horizontalStackViewImageAndLabel.leadingAnchor.constraint(equalTo: taskStatusButton.trailingAnchor, constant: InsetConstants.horizontalInsetBetweenElements.value),
+                horizontalStackViewImageAndLabel.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -InsetConstants.verticalInsetBetweenElements.value)
             ])
         importantImageViewConfigure()
         verticalStackViewConfigure()
@@ -210,24 +210,21 @@ extension AllTaskCell {
         return mutableString
     }
 }
-//MARK: - Fill Data
+// MARK: - Fill Data
 extension AllTaskCell {
     func fillData(task: TodoItem, currentIndexpath: Int) {
-        var eclipseStatus = CurrentTaskStatus.normal
+        var statusTask = CurrentTaskStatus.normal
         self.isDone = task.isTaskComplete
         self.currentTask = task
         let attributeString = NSMutableAttributedString(string: task.text)
-        attributeString.addAttribute(NSAttributedString.Key.strikethroughStyle, value: 2, range: NSRange(location: 0, length: attributeString.length))
-        
+        attributeString.addAttribute(NSAttributedString.Key.strikethroughStyle, value: 2, range: NSRange(location: 0, length: attributeString.length))        
         if isDone {
             taskDescriptionLabel.attributedText = attributeString
-            eclipseStatus = .done
+            statusTask = .done
         } else {
-            
             taskDescriptionLabel.text = task.text
-            eclipseStatus = .normal
+            statusTask = .normal
         }
-        
         var falledDeadline = false
         if let deadline = task.deadLine {
             self.deadlineText = Date.currentDateFormatForDeadline(date: deadline)
@@ -236,12 +233,23 @@ extension AllTaskCell {
                 falledDeadline = true
             }
         }
-        
-        if eclipseStatus == .normal && falledDeadline {
-            eclipseStatus = .falledDeadline
+        if statusTask == .normal && falledDeadline {
+            statusTask = .falledDeadline
         }
-        
-        switch eclipseStatus {
+        self.currentTaskStatus = statusTask
+        if !deadlineText.isEmpty {
+            deadlineLabel.isHidden = false
+            deadlineLabelConfigure(withText: deadlineText)
+        } else {
+            deadlineLabel.isHidden = true
+        }
+        changeStatusButton(statusTask: statusTask)
+        changeTaskImportant(important: task.important)
+        layoutIfNeeded()
+    }
+    
+    private func changeStatusButton(statusTask: CurrentTaskStatus) {
+        switch statusTask {
         case .done:
             taskStatusButton.backgroundColor = UIColor(dynamicProvider: { trait in
                 return CustomColor(trait: trait).green
@@ -254,7 +262,7 @@ extension AllTaskCell {
             taskStatusButton.setTitle("", for: .normal)
             taskStatusButton.backgroundColor = .clear
             taskStatusButton.layer.borderWidth = 1.5
-            taskStatusButton.layer.borderColor = UIColor(dynamicProvider: { trait in
+            taskStatusButton.layer.borderColor = UIColor(dynamicProvider: { _ in
                 return .gray
             }).cgColor
         case .falledDeadline:
@@ -267,15 +275,10 @@ extension AllTaskCell {
             }).cgColor
             taskStatusButton.layer.borderWidth = 1.5
         }
-        self.currentTaskStatus = eclipseStatus
-        if !deadlineText.isEmpty {
-            deadlineLabel.isHidden = false
-            deadlineLabelConfigure(withText: deadlineText)
-        } else {
-            deadlineLabel.isHidden = true
-        }
-        
-        switch task.important {
+    }
+    
+    private func changeTaskImportant(important: ImportantType) {
+        switch important {
         case .important:
             importantImageView.image = UIImage(named: "importantImage")
             importantImageView.isHidden = false
@@ -285,6 +288,5 @@ extension AllTaskCell {
             importantImageView.image = UIImage(named: "unimportantImage")
             importantImageView.isHidden = false
         }
-        layoutIfNeeded()
     }
 }

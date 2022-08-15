@@ -4,12 +4,12 @@
 //
 //  Created by Aleksandr on 31.07.2022.
 //
-//MARK: FIX !
+// MARK: FIX !
 import Foundation
-//TimeZone(secondsFromGMT: 3600 * 3)
+// TimeZone(secondsFromGMT: 3600 * 3)
 extension Date {
     static var yesterday: Date { return Date().dayBefore }
-    static var tomorrow:  Date { return Date().dayAfter }
+    static var tomorrow: Date { return Date().dayAfter }
     var dayBefore: Date {
         return Calendar.current.date(byAdding: .day, value: -1, to: noon) ?? self
     }
@@ -21,7 +21,7 @@ extension Date {
         return Calendar.current.date(bySettingHour: 24, minute: 0, second: 0, of: self) ?? self
     }
     var month: Int {
-        return Calendar.current.component(.month,  from: self)
+        return Calendar.current.component(.month, from: self)
     }
     var isLastDayOfMonth: Bool {
         return dayAfter.month != month

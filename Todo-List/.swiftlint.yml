@@ -1,0 +1,15 @@
+file_length:
+  warning: 500
+  error: 700
+line_length:
+  warning: 180
+  error: 250
+  ignores_comments: true
+  ignores_interpolated_strings: true
+type_body_length:
+  warning: 400
+  error: 700
+vertical_whitespace:
+  max_empty_lines: 1
+disabled_rules:
+  trailing_whitespace
