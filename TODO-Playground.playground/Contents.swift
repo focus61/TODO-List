@@ -1,4 +1,5 @@
 import Foundation
+/*
 struct TodoItem {
     enum ImportantType {
         case unimportant
@@ -118,12 +119,10 @@ final class FileCache {
         let newFolder = documentDirectory.appendingPathComponent(newFolderName)
         try? FileManager.default.createDirectory(at: newFolder, withIntermediateDirectories: true)
         let file = newFolder.appendingPathComponent(fileName)
-        var JSONArray = [[String: Any]]()
-        for item in todoItems {
-            guard let json = item.value.json as? [String: Any] else {return}
-            JSONArray.append(json)
+        let jsonArray = todoItems.map { key, item in
+            item.json as? [String: Any]
         }
-        guard let writeToFile = try? JSONSerialization.data(withJSONObject: JSONArray, options: [.prettyPrinted]) else {return}
+        guard let writeToFile = try? JSONSerialization.data(withJSONObject: jsonArray, options: [.prettyPrinted]) else {return}
         try? writeToFile.write(to: file)
     }
     
@@ -134,14 +133,18 @@ final class FileCache {
         let file = newFolder.appendingPathComponent(fileName)
         var loadArray = [String : TodoItem]()
         guard let data = try? Data(contentsOf: file),
-              let JSONArray = try? JSONSerialization.jsonObject(with: data, options: []) as? [Any]
+              let jsonArray = try? JSONSerialization.jsonObject(with: data, options: []) as? [Any]
         else {return}
-        for json in JSONArray {
-                if let item = TodoItem.parse(json: json) {
-                    loadArray[item.identifier] = item
-                }
-            }
-        self.todoItems = loadArray
+//        let itemArray = jsonArray.map { val in
+            
+        
+            
+//        for json in JSONArray {
+//                if let item = TodoItem.parse(json: json) {
+//                    loadArray[item.identifier] = item
+//                }
+//            }
+//        self.todoItems = loadArray
     }
 }
 
@@ -153,29 +156,41 @@ let fileCache = FileCache(todoItems: [first.identifier: first])
 
 fileCache.addTask(item: second, id: second.identifier)
 print(fileCache.todoItems)
-//fileCache.saveToFile("MYJSON")
+fileCache.saveToFile("MYJSON")
 
-fileCache.deleteTask(id: first.identifier)
-print("AFTER DELETE\n", fileCache.todoItems)
-
-fileCache.addTask(item: third, id: third.identifier)
-print("AFTER ADD\n", fileCache.todoItems)
-
-//fileCache.saveToFile("SECOND")
-print("\n\nSECOND\n\n",fileCache.todoItems)
-
+//fileCache.deleteTask(id: first.identifier)
+//print("AFTER DELETE\n", fileCache.todoItems)
+//
+//fileCache.addTask(item: third, id: third.identifier)
+//print("AFTER ADD\n", fileCache.todoItems)
+//
+////fileCache.saveToFile("SECOND")
+//print("\n\nSECOND\n\n",fileCache.todoItems)
+//
 fileCache.loadFromFile("MYJSON")
 print("\n\nLOAD MY JSON\n\n",fileCache.todoItems)
+//
+//fileCache.loadFromFile("SECOND")
+//print("\n\nLOAD SECOND\n\n",fileCache.todoItems)
+//
+//fileCache.deleteTask(id: second.identifier)
+//fileCache.deleteTask(id: third.identifier)
+//
+//print("\n\nDELETE ALL\n\n",fileCache.todoItems)
+//
+//fileCache.loadFromFile("SECOND")
+//print("\n\nLOAD SECOND\n\n",fileCache.todoItems)
+//
+//fileCache.saveToFile("MYJSON")
 
-fileCache.loadFromFile("SECOND")
-print("\n\nLOAD SECOND\n\n",fileCache.todoItems)
 
-fileCache.deleteTask(id: second.identifier)
-fileCache.deleteTask(id: third.identifier)
+*/
 
-print("\n\nDELETE ALL\n\n",fileCache.todoItems)
+var s = false
+var d = false
+var all = s && d {
+    didSet {
+        print("YES")
+    }
+}
 
-fileCache.loadFromFile("SECOND")
-print("\n\nLOAD SECOND\n\n",fileCache.todoItems)
-
-fileCache.saveToFile("MYJSON")
