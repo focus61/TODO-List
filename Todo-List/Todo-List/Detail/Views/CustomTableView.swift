@@ -6,7 +6,7 @@
 //
 
 import UIKit
-class CustomTableView: UITableView {
+final class CustomTableView: UITableView {
     override init(frame: CGRect, style: UITableView.Style) {
         super.init(frame: frame, style: .plain)
         self.register(ImportantTableViewCell.self, forCellReuseIdentifier: ImportantTableViewCell.identifier)
@@ -20,4 +20,3 @@ class CustomTableView: UITableView {
         fatalError("init(coder:) has not been implemented")
     }
 }
-

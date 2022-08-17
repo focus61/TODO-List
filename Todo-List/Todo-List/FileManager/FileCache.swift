@@ -6,63 +6,99 @@
 //
 
 import Foundation
-final class FileCache {
-    private(set) var todoItems: [String : TodoItem]
-    init(todoItems: [String : TodoItem] = [:]) {
+import CocoaLumberjack
+
+enum FileCacheError: Error {
+    case loadError(String)
+    case saveError(String)
+}
+
+protocol FileCacheService: AnyObject {
+    func save(
+        to file: String,
+        completion: @escaping (Result<Void, Error>) -> Void
+    )
+    func load(
+        from file: String,
+        completion: @escaping (Result<[TodoItem], Error>) -> Void
+    )
+    func addTask(item: TodoItem)
+    func deleteTask(id: String)
+    func updateTask(item: TodoItem)
+}
+
+final class FileCache: FileCacheService {
+    static let fileName = "JSON"
+    private(set) var todoItems: [String: TodoItem]
+    init(todoItems: [String: TodoItem] = [:]) {
         self.todoItems = todoItems
     }
     
-    public func addTask(item: TodoItem, id: String) {
-        if todoItems[id] != nil {
-            return
-        }
-        todoItems[id] = item
+    func addTask(item: TodoItem) {
+        todoItems[item.id] = item
     }
     
-    public func deleteTask(id: String) {
+    func deleteTask(id: String) {
         todoItems.removeValue(forKey: id)
     }
     
-    public func saveToFile(_ fileName: String) {
-        if todoItems.isEmpty {return}
-        let newFolderName = "Testing Folder"
-        guard let documentDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else { return }
-        let newFolder = documentDirectory.appendingPathComponent(newFolderName)
-        try? FileManager.default.createDirectory(at: newFolder, withIntermediateDirectories: true)
-        let file = newFolder.appendingPathComponent(fileName)
-        print(documentDirectory,"\n", newFolder, "\n", file)
-        var JSONArray = [[String: Any]]()
-        for item in todoItems {
-            guard let json = item.value.json as? [String: Any] else {return}
-            JSONArray.append(json)
+    func updateTask(item: TodoItem) {
+        todoItems.updateValue(item, forKey: item.id)
+    }
+
+    func save(to file: String, completion: @escaping (Result<Void, Error>) -> Void) {
+        let thread = DispatchQueue.init(label: "save")
+        thread.async {
+            guard let documentDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else {
+                completion(.failure(FileCacheError.saveError("Ошибка сохранения в файл")))
+                return
+            }
+            let file = documentDirectory.appendingPathComponent(file)
+            let jsonArray = self.todoItems.map { _, item in
+                item.json as? [String: Any]
+            }
+            guard let writeToFile = try? JSONSerialization.data(withJSONObject: jsonArray, options: []) else {
+                completion(.failure(FileCacheError.saveError("Ошибка сохранения в файл")))
+                return
+            }
+            DDLogInfo(Thread.current)
+
+            guard let write = try? writeToFile.write(to: file) else {
+                completion(.failure(FileCacheError.saveError("Ошибка сохранения в файл")))
+                return
+            }
+            DispatchQueue.main.async {
+                DDLogInfo(Thread.current)
+                completion(.success(write))
+            }
         }
-        guard let writeToFile = try? JSONSerialization.data(withJSONObject: JSONArray, options: [.prettyPrinted]) else {return}
-        try? writeToFile.write(to: file)
     }
     
-    public func loadFromFile(_ fileName: String) {
-        let newFolderName = "Testing Folder"
-        guard let documentDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else { return }
-        let newFolder = documentDirectory.appendingPathComponent(newFolderName)
-        let file = newFolder.appendingPathComponent(fileName)
-        var loadArray = [String : TodoItem]()
-        guard let data = try? Data(contentsOf: file),
-              let JSONArray = try? JSONSerialization.jsonObject(with: data, options: []) as? [Any]
-        else {return}
-        for json in JSONArray {
-                if let item = TodoItem.parse(json: json) {
-                    let id = item.identifier
-                    loadArray[id] = item
+    func load(from file: String, completion: @escaping (Result<[TodoItem], Error>) -> Void) {
+        let timeout = TimeInterval.random(in: 1..<3)
+        DispatchQueue.main.asyncAfter(deadline: .now() + timeout) {
+            let thread = DispatchQueue.init(label: "load")
+            thread.async {
+                guard let documentDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else { return }
+                let file = documentDirectory.appendingPathComponent(file)
+                guard let data = try? Data(contentsOf: file),
+                      let jsonArray = try? JSONSerialization.jsonObject(with: data, options: []) as? [Any]
+                else {
+                    completion(.failure(FileCacheError.loadError("Ошибка загрузки из файла")))
+                    return
+                }
+                self.todoItems = jsonArray.reduce(into: [String: TodoItem]()) {
+                    if let item = TodoItem.parse(json: $1) {
+                        $0[item.id] = item
+                    }
+                }
+                DispatchQueue.main.async {
+                    let loadArray = self.todoItems.map { $0.value }.sorted(by: { val1, val2 in
+                        val1.addTaskDate < val2.addTaskDate
+                    })
+                    completion(.success(loadArray))
                 }
             }
-        self.todoItems = loadArray
-    }
-    public func removeFile(_ fileName: String) {
-        let newFolderName = "Testing Folder"
-        guard let documentDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else { return }
-        let newFolder = documentDirectory.appendingPathComponent(newFolderName)
-        let file = newFolder.appendingPathComponent(fileName)
-        try? FileManager.default.removeItem(at: file)
-        self.todoItems = [:]
+        }
     }
 }

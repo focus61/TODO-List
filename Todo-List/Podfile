@@ -7,5 +7,4 @@ target 'Todo-List' do
    pod 'CocoaLumberjack/Swift'
    pod 'SwiftLint' 
   # Pods for Todo-List
-
 end

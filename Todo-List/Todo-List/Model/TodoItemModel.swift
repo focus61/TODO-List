@@ -6,29 +6,33 @@
 //
 
 import Foundation
+
 enum ImportantType {
     case unimportant
     case basic
     case important
 }
+
 struct TodoItem {
-    let identifier: String
+    let id: String
     let text: String
     let important: ImportantType
     let deadLine: Date?
     let isTaskComplete: Bool
     let addTaskDate: Date
     let changeTaskDate: Date?
-    
-    init(identifier: String = UUID().uuidString,
+    init(id: String = UUID().uuidString,
          text: String,
          important: ImportantType = .basic,
          deadline: Date? = nil,
-         isTaskComplete: Bool,
+         isTaskComplete: Bool = false,
          addTaskDate: Date,
-         changeTaskDate: Date? = nil)
-    {
-        self.identifier = identifier
+         changeTaskDate: Date? = nil) {
+        if id.isEmpty {
+            self.id = UUID().uuidString
+        } else {
+            self.id = id
+        }
         self.text = text
         self.important = important
         self.deadLine = deadline
@@ -41,33 +45,32 @@ struct TodoItem {
 extension TodoItem {
     static func parse(json: Any) -> TodoItem? {
         guard
-            let json = try? JSONSerialization.data(withJSONObject: json),
-            let jsonSerilization = try? JSONSerialization.jsonObject(with: json, options: []) as? [String: Any],
-            let identifier = jsonSerilization["identifier"] as? String,
-            let text = jsonSerilization["text"] as? String,
-            let isTaskCompleteValue = jsonSerilization["isTaskComplete"] as? Int,
-            let addTaskDateValue = jsonSerilization["addTaskDate"] as? TimeInterval
-        else {return nil}
+            let json = json as? [String: Any],
+            let identifier = json["identifier"] as? String,
+            let text = json["text"] as? String,
+            let isTaskCompleteValue = json["isTaskComplete"] as? Bool,
+            let addTaskDateValue = json["addTaskDate"] as? TimeInterval
+        else { return nil }
 
-        let isTaskComplete = isTaskCompleteValue == 0 ? false : true
+        let isTaskComplete = isTaskCompleteValue
 
         let addTaskDate = Date(timeIntervalSince1970: addTaskDateValue)
         
         var important: ImportantType = .basic
-        if let importantValue = jsonSerilization["important"] as? Int {
+        if let importantValue = json["important"] as? Int {
             important = importantValue == 0 ? .important : .unimportant
         }
         
         var deadline: Date?
-        if let deadlineValue = jsonSerilization["deadline"] as? TimeInterval {
+        if let deadlineValue = json["deadline"] as? TimeInterval {
             deadline = Date(timeIntervalSince1970: deadlineValue)
         }
         
         var changeTaskDate: Date?
-        if let changeTaskDateValue = jsonSerilization["changeTaskDate"] as? TimeInterval {
+        if let changeTaskDateValue = json["changeTaskDate"] as? TimeInterval {
             changeTaskDate = Date(timeIntervalSince1970: changeTaskDateValue)
         }
-        let newObject = TodoItem(identifier: identifier,
+        let newObject = TodoItem(id: identifier,
                                  text: text,
                                  important: important,
                                  deadline: deadline,
@@ -78,26 +81,34 @@ extension TodoItem {
         return newObject
     }
     
-    public var json: Any? {
-        let isTaskCompleteValue = isTaskComplete ? 0 : 1
-        var object: [String: Any] = ["identifier" : "\(identifier)",
-                                     "text": "\(text)",
+    var json: Any {
+        let isTaskCompleteValue = isTaskComplete // исправлено
+        var object: [String: Any] = ["identifier": id,
+                                     "text": text,
                                      "isTaskComplete": isTaskCompleteValue,
                                      "addTaskDate": addTaskDate.timeIntervalSince1970
                                     ]
         switch important {
-            case .important:        object["important"] = 0
-            case .unimportant:      object["important"] = 1
-            default: break
+        case .important:
+            object["important"] = 0
+        case .unimportant:
+            object["important"] = 1
+        case .basic:
+            break
         }
-        
         if let changeTaskDate = changeTaskDate {
             object["changeTaskDate"] = changeTaskDate.timeIntervalSince1970
         }
         
-        if let deadLine = deadLine  {
+        if let deadLine = deadLine {
             object["deadline"] = deadLine.timeIntervalSince1970
         }
         return object
+    }
+}
+
+extension TodoItem {
+    func withComplete(_ isDone: Bool) -> TodoItem {
+        return TodoItem(id: id, text: text, important: important, deadline: deadLine, isTaskComplete: isDone, addTaskDate: addTaskDate, changeTaskDate: changeTaskDate)
     }
 }
