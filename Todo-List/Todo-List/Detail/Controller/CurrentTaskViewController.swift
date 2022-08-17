@@ -7,12 +7,11 @@
 
 import UIKit
 
-
-protocol UpdateAllTasksDelegate {
+protocol UpdateAllTasksDelegate: AnyObject {
     func updateTask(item: TodoItem)
     func deleteTask(id: String)
 }
-//DOIT - Keyboard will show etc.
+// DOIT - Keyboard will show etc.
 final class CurrentTaskViewController: UIViewController {
     private enum Consts {
         case startHeightTextView
@@ -147,7 +146,7 @@ final class CurrentTaskViewController: UIViewController {
         NSLayoutConstraint.activate([
             textView.topAnchor.constraint(equalTo: containerView.topAnchor, constant: WindowInsetConstants.top.value),
             textView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -WindowInsetConstants.trailing.value),
-            textView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: WindowInsetConstants.leading.value),
+            textView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: WindowInsetConstants.leading.value)
         ])
         textViewHeight = textView.heightAnchor.constraint(equalToConstant: Consts.startHeightTextView.value)
         textViewHeight?.isActive = true
@@ -251,7 +250,9 @@ final class CurrentTaskViewController: UIViewController {
         }
         let isTaskComplete = currentItem?.isTaskComplete ?? false
         let changeTaskDate: Date? = isChange ? Date.now : nil
+// swiftlint:disable line_length
         let newItem = TodoItem(id: todoItemId, text: itemText, important: itemImportant, deadline: itemDeadline, isTaskComplete: isTaskComplete, addTaskDate: addTaskDate ?? Date.now, changeTaskDate: changeTaskDate)
+// swiftlint:enable line_length
         self.delegate?.updateTask(item: newItem)
         dismiss(animated: true, completion: nil)
     }
@@ -269,7 +270,7 @@ final class CurrentTaskViewController: UIViewController {
         view.endEditing(true)
     }
     
-//    MARK: -Changed color for display mode
+// MARK: - Changed color for display mode
     private func colorChangeSettings() {
         cancelBarItem.tintColor = UIColor(dynamicProvider: { trait in
             return CustomColor(trait: trait).blue
@@ -307,7 +308,7 @@ final class CurrentTaskViewController: UIViewController {
         }
     }
 }
-//MARK: - textViewDidChange - textViewDidBeginEditing
+// MARK: - textViewDidChange - textViewDidBeginEditing
 extension CurrentTaskViewController: UITextViewDelegate {
     func textViewDidChange(_ textView: UITextView) {
         if isChange {
@@ -357,7 +358,7 @@ extension CurrentTaskViewController: UITextViewDelegate {
         
     }
 }
-//MARK: - TableView Config
+// MARK: - TableView Config
 extension CurrentTaskViewController: UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         if calendarIsOff {
@@ -369,23 +370,26 @@ extension CurrentTaskViewController: UITableViewDelegate, UITableViewDataSource 
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         if indexPath.row == 0 {
-            guard let cell = tableView.dequeueReusableCell(withIdentifier: ImportantTableViewCell.identifier, for: indexPath) as? ImportantTableViewCell else { return UITableViewCell() }
-            cell.fillData(segmentedValue: importantValue ?? 1)
-            cell.importantSegmentControl.addTarget(self, action: #selector(segmentImportantTarget(sender:)), for: .valueChanged)
-            return cell
+            
+            let cell = tableView.dequeueReusableCell(withIdentifier: ImportantTableViewCell.identifier, for: indexPath)
+            guard let importantCell =  cell as? ImportantTableViewCell else { return cell }
+            importantCell.fillData(segmentedValue: importantValue ?? 1)
+            importantCell.importantSegmentControl.addTarget(self, action: #selector(segmentImportantTarget(sender:)), for: .valueChanged)
+            return importantCell
         } else if indexPath.row == 1 {
-            guard let cell = tableView.dequeueReusableCell(withIdentifier: DeadlineDateTableViewCell.identifier, for: indexPath) as? DeadlineDateTableViewCell else { return UITableViewCell() }
+            let cell = tableView.dequeueReusableCell(withIdentifier: DeadlineDateTableViewCell.identifier, for: indexPath)
+            guard let dateCell = cell as? DeadlineDateTableViewCell else { return cell }
             var fillDate = Date.tomorrow
             if let changedDate = self.changedDeadlineDate {
                 fillDate = changedDate
             }
             
-            cell.fillData(deadlineIsOff: deadlineIsOff, deadlineDate: fillDate, calendarIsOff: calendarIsOff)
-            cell.deadlineSwitch.addTarget(self, action: #selector(changeSwitchValue), for: .valueChanged)
+            dateCell.fillData(deadlineIsOff: deadlineIsOff, deadlineDate: fillDate, calendarIsOff: calendarIsOff)
+            dateCell.deadlineSwitch.addTarget(self, action: #selector(changeSwitchValue), for: .valueChanged)
             if !deadlineIsOff {
-                cell.changeDeadlineButton.addTarget(self, action: #selector(addCalendarForDeadline), for: .touchUpInside)
+                dateCell.changeDeadlineButton.addTarget(self, action: #selector(addCalendarForDeadline), for: .touchUpInside)
             }
-            return cell
+            return dateCell
         }
         if !calendarIsOff {
             guard let cell = tableView.dequeueReusableCell(withIdentifier: CalendarCell.identifier, for: indexPath) as? CalendarCell else {return UITableViewCell()}
@@ -404,7 +408,7 @@ extension CurrentTaskViewController: UITableViewDelegate, UITableViewDataSource 
         return Consts.heightRow.value
     }
     
-//  MARK: - Table view Action/Target
+// MARK: - Table view Action/Target
     @objc private func segmentImportantTarget(sender: UISegmentedControl) {
         self.importantValue = sender.selectedSegmentIndex
     }

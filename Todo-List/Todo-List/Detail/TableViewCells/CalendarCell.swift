@@ -7,7 +7,7 @@
 
 import UIKit
 
-protocol UpdateDateWithDatePickerDelegate {
+protocol UpdateDateWithDatePickerDelegate: AnyObject {
     func update(currentDate: Date)
 }
 
