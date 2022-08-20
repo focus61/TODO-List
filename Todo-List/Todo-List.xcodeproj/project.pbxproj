@@ -8,6 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		7A9008F74DB5B352FF806E7D /* Pods_Todo_List.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E771E58738D46B8287B61E02 /* Pods_Todo_List.framework */; };
+		9D3771D928AD39DD00BE63DE /* NetworkService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D3771D828AD39DD00BE63DE /* NetworkService.swift */; };
+		9D3771DB28AD3A3F00BE63DE /* NetworkModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D3771DA28AD3A3F00BE63DE /* NetworkModel.swift */; };
 		9D7E05BD28950B4B0049C9E1 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D7E05BC28950B4B0049C9E1 /* AppDelegate.swift */; };
 		9D7E05BF28950B4B0049C9E1 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D7E05BE28950B4B0049C9E1 /* SceneDelegate.swift */; };
 		9D7E05C128950B4B0049C9E1 /* CurrentTaskViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D7E05C028950B4B0049C9E1 /* CurrentTaskViewController.swift */; };
@@ -46,6 +48,8 @@
 /* Begin PBXFileReference section */
 		2A1C67AB72D13843E97C176E /* Pods-Todo-List.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Todo-List.release.xcconfig"; path = "Target Support Files/Pods-Todo-List/Pods-Todo-List.release.xcconfig"; sourceTree = "<group>"; };
 		65CA37DEC207FBD83D725854 /* Pods-Todo-List.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Todo-List.debug.xcconfig"; path = "Target Support Files/Pods-Todo-List/Pods-Todo-List.debug.xcconfig"; sourceTree = "<group>"; };
+		9D3771D828AD39DD00BE63DE /* NetworkService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkService.swift; sourceTree = "<group>"; };
+		9D3771DA28AD3A3F00BE63DE /* NetworkModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkModel.swift; sourceTree = "<group>"; };
 		9D7E05B928950B4B0049C9E1 /* Todo-List.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Todo-List.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		9D7E05BC28950B4B0049C9E1 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		9D7E05BE28950B4B0049C9E1 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
@@ -109,6 +113,15 @@
 			path = Other;
 			sourceTree = "<group>";
 		};
+		9D3771D728AD399C00BE63DE /* NetworkLayer */ = {
+			isa = PBXGroup;
+			children = (
+				9D3771D828AD39DD00BE63DE /* NetworkService.swift */,
+				9D3771DA28AD3A3F00BE63DE /* NetworkModel.swift */,
+			);
+			path = NetworkLayer;
+			sourceTree = "<group>";
+		};
 		9D7E05B028950B4B0049C9E1 = {
 			isa = PBXGroup;
 			children = (
@@ -130,6 +143,7 @@
 		9D7E05BB28950B4B0049C9E1 /* Todo-List */ = {
 			isa = PBXGroup;
 			children = (
+				9D3771D728AD399C00BE63DE /* NetworkLayer */,
 				9D7E05D028950B780049C9E1 /* App&Scene */,
 				9DEAE299289967AC002B915E /* Main */,
 				9DEAE2982899679B002B915E /* Detail */,
@@ -391,6 +405,7 @@
 				9DBF513F28968CA20070DC66 /* DeadlineDateTableViewCell.swift in Sources */,
 				9DBF51452896ABB10070DC66 /* CustomTableView.swift in Sources */,
 				9DF271D9289D5E56000F8208 /* AllTasksCell.swift in Sources */,
+				9D3771DB28AD3A3F00BE63DE /* NetworkModel.swift in Sources */,
 				9D7E05D228951B7A0049C9E1 /* CustomFont.swift in Sources */,
 				9D7E05BD28950B4B0049C9E1 /* AppDelegate.swift in Sources */,
 				9DEAE29C289967FF002B915E /* AllTaskTableViewController.swift in Sources */,
@@ -398,6 +413,7 @@
 				9DF271E0289E8D9F000F8208 /* AddTaskCell.swift in Sources */,
 				9D7E05D428951E500049C9E1 /* CustomColor.swift in Sources */,
 				9DBF514128968CCB0070DC66 /* ImportantTableViewCell.swift in Sources */,
+				9D3771D928AD39DD00BE63DE /* NetworkService.swift in Sources */,
 				9DBF514A2896D3FF0070DC66 /* CalendarCell.swift in Sources */,
 				9DBF514F2896DB490070DC66 /* FileCache.swift in Sources */,
 				9D7E05BF28950B4B0049C9E1 /* SceneDelegate.swift in Sources */,
@@ -545,7 +561,7 @@
 				INFOPLIST_FILE = "Todo-List/Info.plist";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = UIInterfaceOrientationPortrait;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
@@ -575,7 +591,7 @@
 				INFOPLIST_FILE = "Todo-List/Info.plist";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = UIInterfaceOrientationPortrait;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;

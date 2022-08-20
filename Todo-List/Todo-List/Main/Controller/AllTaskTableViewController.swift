@@ -45,6 +45,14 @@ final class AllTaskTableViewController: UITableViewController {
             self.tableView.reloadData()
         }
         
+        let net = NetworkService()
+        net.getAllTodoItems { result in
+            switch result {
+            case .failure(let err): print(err.localizedDescription)
+            case .success(let item): print(item)
+            }
+        }
+        
         NotificationCenter.default.addObserver(self, selector: #selector(changeOrientation), name: UIDevice.orientationDidChangeNotification, object: nil)
         self.navigationController?.view.addSubview(button)
         changeColors()
