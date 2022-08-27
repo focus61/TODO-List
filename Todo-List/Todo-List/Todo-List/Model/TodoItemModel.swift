@@ -6,7 +6,7 @@
 //
 
 import Foundation
-import UIKit
+
 enum ImportantType {
     case unimportant
     case basic
@@ -104,38 +104,6 @@ extension TodoItem {
             object["deadline"] = deadLine.timeIntervalSince1970
         }
         return object
-    }
-    
-    func parseToNetworkModel() -> NetworkTodoItem {
-        var importantString = ""
-        switch important {
-        case .unimportant : importantString = "low"
-        case .basic  : importantString = "basic"
-        case .important : importantString = "important"
-        }
-//        var itemDeadline: Date? = nil
-//        if let deadline = deadline {
-//            itemDeadline = convertDate(withInt: deadline)
-//        }
-        var networkDeadline: Int64?
-        if let deadline = deadLine {
-            networkDeadline = Int64(deadline.timeIntervalSince1970)
-        }
-        var changeTaskDateInt: Int64 = Int64(addTaskDate.timeIntervalSince1970)
-        if let changeDate = changeTaskDate?.timeIntervalSince1970 {
-            changeTaskDateInt = Int64(changeDate)
-        }
-        let deviceId = UIDevice.current.identifierForVendor?.uuidString
-
-        return NetworkTodoItem(id: id,
-                                       text: text,
-                                       important: importantString,
-                                       deadline: networkDeadline,
-                                       done: isTaskComplete,
-                                       color: nil,
-                                       createdAt: Int64(addTaskDate.timeIntervalSince1970),
-                                       changedAt: changeTaskDateInt,
-                                       lastUpdatedBy: deviceId ?? "Some")
     }
 }
 

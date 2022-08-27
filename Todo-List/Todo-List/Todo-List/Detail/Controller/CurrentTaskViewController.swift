@@ -8,7 +8,7 @@
 import UIKit
 
 protocol UpdateAllTasksDelegate: AnyObject {
-    func updateTask(item: TodoItem, isOldItem: Bool)
+    func updateTask(item: TodoItem)
     func deleteTask(id: String)
 }
 // DOIT - Keyboard will show etc.
@@ -50,7 +50,6 @@ final class CurrentTaskViewController: UIViewController {
     private var importantValue: Int?
     private var addTaskDate: Date?
     private var hideHeight: CGFloat = 0
-    var isOldItem = false
     private lazy var text = "" {
         willSet {
             if newValue == "" {
@@ -254,7 +253,7 @@ final class CurrentTaskViewController: UIViewController {
 // swiftlint:disable line_length
         let newItem = TodoItem(id: todoItemId, text: itemText, important: itemImportant, deadline: itemDeadline, isTaskComplete: isTaskComplete, addTaskDate: addTaskDate ?? Date.now, changeTaskDate: changeTaskDate)
 // swiftlint:enable line_length
-        self.delegate?.updateTask(item: newItem, isOldItem: isOldItem)
+        self.delegate?.updateTask(item: newItem)
         dismiss(animated: true, completion: nil)
     }
     

@@ -45,17 +45,16 @@ final class FileCache: FileCacheService {
     func updateTask(item: TodoItem) {
         todoItems.updateValue(item, forKey: item.id)
     }
-    
+
     func save(to file: String, completion: @escaping (Result<Void, Error>) -> Void) {
-        let queue = DispatchQueue.init(label: "save")
-        queue.async {
+        let thread = DispatchQueue.init(label: "save")
+        thread.async {
             guard let documentDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else {
                 completion(.failure(FileCacheError.saveError("Ошибка сохранения в файл")))
                 return
             }
             let file = documentDirectory.appendingPathComponent(file)
             let jsonArray = self.todoItems.map { _, item in
-                
                 item.json as? [String: Any]
             }
             guard let writeToFile = try? JSONSerialization.data(withJSONObject: jsonArray, options: []) else {
@@ -63,7 +62,7 @@ final class FileCache: FileCacheService {
                 return
             }
             DDLogInfo(Thread.current)
-            
+
             guard let write = try? writeToFile.write(to: file) else {
                 completion(.failure(FileCacheError.saveError("Ошибка сохранения в файл")))
                 return
@@ -76,27 +75,29 @@ final class FileCache: FileCacheService {
     }
     
     func load(from file: String, completion: @escaping (Result<[TodoItem], Error>) -> Void) {
-        let queue = DispatchQueue.init(label: "load")
-        queue.async {
-            guard let documentDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else { return }
-            let file = documentDirectory.appendingPathComponent(file)
-            guard let data = try? Data(contentsOf: file),
-                  let jsonArray = try? JSONSerialization.jsonObject(with: data, options: []) as? [Any]
-            else {
-                completion(.failure(FileCacheError.loadError("Ошибка загрузки из файла")))
-                return
-            }
-            self.todoItems = jsonArray.reduce(into: [String: TodoItem]()) {
-                if let item = TodoItem.parse(json: $1) {
-                    $0[item.id] = item
+        let timeout = TimeInterval.random(in: 1..<3)
+        DispatchQueue.main.asyncAfter(deadline: .now() + timeout) {
+            let thread = DispatchQueue.init(label: "load")
+            thread.async {
+                guard let documentDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else { return }
+                let file = documentDirectory.appendingPathComponent(file)
+                guard let data = try? Data(contentsOf: file),
+                      let jsonArray = try? JSONSerialization.jsonObject(with: data, options: []) as? [Any]
+                else {
+                    completion(.failure(FileCacheError.loadError("Ошибка загрузки из файла")))
+                    return
                 }
-            }
-           
-            DispatchQueue.main.async {
-                let loadArray = self.todoItems.map { $0.value }.sorted(by: { val1, val2 in
-                    val1.addTaskDate < val2.addTaskDate
-                })
-                completion(.success(loadArray))
+                self.todoItems = jsonArray.reduce(into: [String: TodoItem]()) {
+                    if let item = TodoItem.parse(json: $1) {
+                        $0[item.id] = item
+                    }
+                }
+                DispatchQueue.main.async {
+                    let loadArray = self.todoItems.map { $0.value }.sorted(by: { val1, val2 in
+                        val1.addTaskDate < val2.addTaskDate
+                    })
+                    completion(.success(loadArray))
+                }
             }
         }
     }

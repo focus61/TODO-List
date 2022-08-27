@@ -14,6 +14,7 @@ protocol WorkWithFileCache {
 
 final class AllTaskTableViewController: UITableViewController {
     private var currentItems = [TodoItem]()
+    private let activityIndiicatorView: UIActivityIndicatorView = .init(frame: CGRect(x: 0, y: 0, width: 25, height: 25))
     private var allTask: [TodoItem] {
         let filterItems = currentItems.filter { !$0.isTaskComplete }
         if filterItems.count == currentItems.count {
@@ -27,48 +28,36 @@ final class AllTaskTableViewController: UITableViewController {
             return currentItems
         }
     }
-    var userDefaultsSettings = UserDefaultsSettings()
-    private var networkAllTask = [TodoItem]()
-    private let network = NetworkService()
-    private var localRevision: Int32 {
-        return userDefaultsSettings.getRevisionValue()
-    }
-    private var networkRevision: Int32 {
-        return network.revision
-    }
-    private var isDirty = false
     private var isDoneCount = 0
     private var isFiltered = true
     private let fileCache = FileCache()
     private let button: UIButton = .init(frame: .zero)
     private var isNameShowButtonForHeader = true
     private let addItemCellCount = 1
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         loggerConfigure()
         configure()
+        activityConfigure()
         loadDataInFileCache { items in
             self.currentItems = items
             self.tableView.reloadData()
         }
-        network.getAllTodoItems { [weak self] result in
-            guard let self = self else { return }
+        
+        let net = NetworkService()
+        net.getAllTodoItems { result in
             switch result {
-            case .success(let networkItems):
-                print(self.localRevision, self.networkRevision)
-                if self.localRevision != self.networkRevision || (self.currentItems.isEmpty && !networkItems.isEmpty) {
-                    self.updateTaskForServer(items: self.allTask)
-                }
-            case .failure(let error):
-                self.isDirty = true
-                self.addAlertWithErrorMessage(error: error)
+            case .failure(let err): print(err.localizedDescription)
+            case .success(let item): print(item)
             }
         }
-
+        
         NotificationCenter.default.addObserver(self, selector: #selector(changeOrientation), name: UIDevice.orientationDidChangeNotification, object: nil)
         self.navigationController?.view.addSubview(button)
         changeColors()
     }
+    
     deinit {
         NotificationCenter.default.removeObserver(self, name: UIDevice.orientationDidChangeNotification, object: nil)
     }
@@ -82,6 +71,8 @@ final class AllTaskTableViewController: UITableViewController {
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         updateLayer()
+        activityIndiicatorView.frame.size = CGSize(width: 25, height: 25)
+        activityIndiicatorView.center = view.center
     }
     
     override func viewWillDisappear(_ animated: Bool) {
@@ -90,6 +81,14 @@ final class AllTaskTableViewController: UITableViewController {
     
     @objc private func changeOrientation() {
         button.frame.origin = CGPoint(x: view.center.x - 25, y: view.frame.height - 100)
+    }
+    
+    private func activityConfigure() {
+        self.navigationController?.view.addSubview(activityIndiicatorView)
+        tableView.isHidden = true
+        activityIndiicatorView.isHidden = false
+        activityIndiicatorView.startAnimating()
+        activityIndiicatorView.hidesWhenStopped = true
     }
     
     private func loggerConfigure() {
@@ -156,7 +155,6 @@ final class AllTaskTableViewController: UITableViewController {
     private func presentNewTaskScreen() {
         let currentTaskViewController = CurrentTaskViewController()
         currentTaskViewController.delegate = self
-        currentTaskViewController.isChange = false
         let navCont = UINavigationController(rootViewController: currentTaskViewController)
         navigationController?.present(navCont, animated: true, completion: nil)
     }
@@ -165,7 +163,6 @@ final class AllTaskTableViewController: UITableViewController {
         let currentTaskViewController = CurrentTaskViewController()
         currentTaskViewController.currentItem = item
         currentTaskViewController.isChange = true
-        currentTaskViewController.isOldItem = true
         currentTaskViewController.delegate = self
         let navCont = UINavigationController(rootViewController: currentTaskViewController)
         return navCont
@@ -236,7 +233,7 @@ extension AllTaskTableViewController {
             self.tableView.beginUpdates()
             self.tableView.deleteRows(at: [indexPath], with: .automatic)
             self.saveDataInFileCache(isBeginUpdates: true)
-            self.deleteItemForServer(at: itemId)
+
         }
         let infoAction = UIContextualAction(style: .normal, title: nil) { [weak self] _, _, _ in
             guard let self = self else { return }
@@ -263,7 +260,6 @@ extension AllTaskTableViewController {
             self.fileCache.deleteTask(id: item.id)
             self.fileCache.addTask(item: item)
             self.saveDataInFileCache()
-            self.editTaskForServer(item: item)
         }
         doneAction.image = UIImage(named: "done")
         doneAction.backgroundColor = UIColor(dynamicProvider: { trait in
@@ -313,43 +309,32 @@ extension AllTaskTableViewController {
 }
 // MARK: - Delegate methods -
 extension AllTaskTableViewController: UpdateAllTasksDelegate {
-    func updateTask(item: TodoItem, isOldItem: Bool) {
-        if isOldItem {
-            fileCache.updateTask(item: item)
-            saveDataInFileCache()
-            editTaskForServer(item: item)
-        } else {
-            fileCache.addTask(item: item)
-            saveDataInFileCache()
-            addTaskForServer(item: item)
-        }
-        if isDirty {
-            self.updateTaskForServer(items: self.allTask)
-        }
+    func updateTask(item: TodoItem) {
+        fileCache.addTask(item: item)
+        saveDataInFileCache()
     }
+    
     func deleteTask(id: String) {
         self.fileCache.deleteTask(id: id)
         saveDataInFileCache()
-        deleteItemForServer(at: id)
     }
 }
+
 extension AllTaskTableViewController: UpdateStatusTaskDelegate {
     func updateStatus(item: TodoItem) {
-        if isDirty {
-            self.updateTaskForServer(items: self.allTask)
-        }
         fileCache.deleteTask(id: item.id)
         fileCache.addTask(item: item)
         saveDataInFileCache()
-        editTaskForServer(item: item)
     }
 }
+
 extension AllTaskTableViewController: ShowAndHideDoneTasksDelegate {
     func show(newItem: [TodoItem]) {
         self.isNameShowButtonForHeader = false
         self.isFiltered = false
         self.tableView.reloadData()
     }
+    
     func hide(newItem: [TodoItem]) {
         self.isFiltered = true
         self.isNameShowButtonForHeader = true
@@ -358,9 +343,12 @@ extension AllTaskTableViewController: ShowAndHideDoneTasksDelegate {
 }
 
 extension AllTaskTableViewController: WorkWithFileCache {
+    
     func saveDataInFileCache(isBeginUpdates: Bool = false) {
-        fileCache.save(to: FileCache.fileName) { [weak self] result in
-            guard let self = self else { return }
+        tableView.isHidden = true
+        activityIndiicatorView.isHidden = false
+        activityIndiicatorView.startAnimating()
+        fileCache.save(to: FileCache.fileName) { result in
             switch result {
             case .failure(let saveErrorMessage):
                 let alert = self.addAlert(title: "Внимание", message: saveErrorMessage.localizedDescription)
@@ -378,11 +366,13 @@ extension AllTaskTableViewController: WorkWithFileCache {
             }
         }
     }
+    
     func loadDataInFileCache(handler: @escaping ([TodoItem]) -> Void) {
-        fileCache.load(from: FileCache.fileName) { [weak self] result in
-            guard let self = self else { return }
+        fileCache.load(from: FileCache.fileName) { result in
             switch result {
             case .success(let items):
+                self.activityIndiicatorView.stopAnimating()
+                self.tableView.isHidden = false
                 handler(items)
             case .failure(let loadErrorMessage):
                 if !(self.allTask.isEmpty && self.fileCache.todoItems.isEmpty) {
@@ -391,84 +381,6 @@ extension AllTaskTableViewController: WorkWithFileCache {
                     self.present(alert, animated: true, completion: nil)
                 }
             }
-        }
-    }
-}
-extension AllTaskTableViewController {
-    private func updateTaskForServer(items: [TodoItem]) {
-        self.network.updateTodoItems(items: items) { [weak self] result in
-            guard let self = self else { return }
-            switch result {
-            case .success(let newAllTaskDictionary):
-                self.fileCache.todoItems.forEach { id, item in
-                    if newAllTaskDictionary[id] == nil {
-                        self.fileCache.deleteTask(id: id)
-                    } else {
-                        self.fileCache.updateTask(item: item)
-                    }
-                }
-                newAllTaskDictionary.forEach { id, item in
-                    if self.fileCache.todoItems[id] == nil {
-                        self.fileCache.addTask(item: item)
-                    }
-                }
-                self.saveDataInFileCache()
-            case .failure(let error):
-                self.isDirty = true
-                self.addAlertWithErrorMessage(error: error)
-            }
-        }
-    }
-    private func addTaskForServer(item: TodoItem) {
-        network.addTodoItem(item: item) { [weak self] result in
-            guard let self = self else { return }
-            switch result {
-            case .success():
-                if self.isDirty {
-                    self.updateTaskForServer(items: self.allTask)
-                }
-                print("")
-            case .failure(let error):
-                self.isDirty = true
-                self.addAlertWithErrorMessage(error: error)
-            }
-        }
-    }
-    private func editTaskForServer(item: TodoItem) {
-        network.editTodoItem(item) { [weak self] result in
-            guard let self = self else { return }
-            switch result {
-            case .success(let item):
-                if self.isDirty {
-                    self.updateTaskForServer(items: self.allTask)
-                }
-                print(item)
-            case .failure(let error):
-                self.isDirty = true
-                self.addAlertWithErrorMessage(error: error)
-            }
-        }
-    }
-    private func deleteItemForServer(at id: String) {
-        network.deleteTodoItem(at: id) { [weak self] result in
-            guard let self = self else { return }
-            switch result {
-            case .success(let item):
-                print(item)
-                if self.isDirty {
-                    self.updateTaskForServer(items: self.allTask)
-                }
-            case .failure(let error):
-                self.addAlertWithErrorMessage(error: error)
-                self.isDirty = true
-            }
-        }
-    }
-    private func addAlertWithErrorMessage(error: NetworkError) {
-        guard let errorMessage = error.errorDescription else { return }
-        DispatchQueue.main.async {
-            let alert = self.addAlert(title: "Внимание", message: errorMessage)
-            self.present(alert, animated: true)
         }
     }
 }
